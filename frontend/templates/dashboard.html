@@ -1,0 +1,61 @@
+<!-- frontend/templates/dashboard.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <h1>Dashboard</h1>
+    <p>Welcome!</p>
+
+    <h2>Make a Payment with Stripe</h2>
+    <!-- Existing Stripe payment form -->
+    <form id="paymentForm">
+        <input type="text" id="cardNumber" placeholder="Card Number" required /><br/>
+        <input type="text" id="expMonth" placeholder="Expiry Month" required /><br/>
+        <input type="text" id="expYear" placeholder="Expiry Year" required /><br/>
+        <input type="text" id="cvc" placeholder="CVC" required /><br/>
+        <input type="number" id="amount" placeholder="Amount (in cents)" required /><br/>
+        <button type="submit">Pay with Stripe</button>
+    </form>
+
+    <h2>Make a Payment with PayPal</h2>
+    <button id="payPalButton">Pay with PayPal</button>
+
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="https://www.paypal.com/sdk/js?client-id={{.PayPalClientID}}&currency=EUR"></script>
+    <script>
+        // Existing Stripe payment handler
+        document.getElementById('paymentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const amount = document.getElementById('amount').value;
+
+            const response = await fetch('/api/payment', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({token: 'tok_visa', amount}) // Use Stripe Elements in production
+            });
+
+            const data = await response.json();
+            if (data.status === 'succeeded') {
+                alert('Stripe Payment successful!');
+            } else {
+                alert('Stripe Payment failed: ' + data.error);
+            }
+        });
+
+        // PayPal payment handler
+        document.getElementById('payPalButton').addEventListener('click', async () => {
+            fetch("/api/paypal", {
+                method: "POST",
+                headers: {'Content-Type': 'application/json'},
+            })
+                .then(response => response.json())
+                .then(data => {
+                    window.location.href = data.approval_url;
+                })
+        });
+    </script>
+</body>
+</html>

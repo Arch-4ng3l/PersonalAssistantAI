@@ -1,0 +1,51 @@
+package config
+
+import (
+	"log"
+	"os"
+
+	"github.com/joho/godotenv"
+)
+
+type Config struct {
+    DBUser string
+    DBPassword string
+    DBName string
+    DBHost string
+    DBPort string
+    JWTSecret string
+    GoogleClientID string
+    GoogleClientSecret string
+
+    StripeSecretKey string
+    StripePublishableKey string
+
+    PayPalClientID string
+    PayPalSecret string
+    PayPalMode string
+
+}
+
+
+func LoadConfig() Config {
+    err := godotenv.Load()
+    if err != nil {
+        log.Println("No .env file found")
+    }
+
+    return Config{
+        DBUser:         os.Getenv("DB_USER"),
+        DBPassword:     os.Getenv("DB_PASSWORD"),
+        DBName:         os.Getenv("DB_NAME"),
+        DBHost:         os.Getenv("DB_HOST"),
+        DBPort:         os.Getenv("DB_PORT"),
+        JWTSecret:      os.Getenv("JWT_SECRET"),
+        GoogleClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
+        GoogleClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
+        StripeSecretKey:    os.Getenv("STRIPE_SECRET_KEY"),
+        StripePublishableKey: os.Getenv("STRIPE_PUBLISHABLE_KEY"),
+        PayPalClientID:       os.Getenv("PAYPAL_CLIENT_ID"),
+        PayPalSecret:         os.Getenv("PAYPAL_SECRET"),
+        PayPalMode:           os.Getenv("PAYPAL_MODE"),
+    }
+}
