@@ -12,7 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
-	"github.com/plutov/paypal/v4"
 	"github.com/stripe/stripe-go/v72"
 	"github.com/stripe/stripe-go/v72/charge"
 	"golang.org/x/crypto/bcrypt"
@@ -23,14 +22,7 @@ import (
 var (
     db *gorm.DB
     oauthConf *oauth2.Config
-    paypalClient *paypal.Client
 )
-
-type PayPalPaymentRequest struct {
-    Amount   string `json:"amount" binding:"required"`   // e.g., "10.00"
-    Currency string `json:"currency" binding:"required"` // e.g., "USD"
-    Description string `json:"description"` // Optional
-}
 
 func InitDB(config config.Config) {
     var err error
@@ -54,172 +46,6 @@ func InitOAuth(config config.Config) {
         Endpoint:     google.Endpoint,
     }
 }
-
-func InitPayPal(config config.Config) {
-    client, err  := paypal.NewClient(config.PayPalClientID,  config.PayPalSecret, paypal.APIBaseSandBox)
-    if err != nil {
-        log.Fatalf("Paypal Init Error: %s\n", err.Error())
-    }
-    client.SetLog(os.Stdout)
-
-    paypalClient = client
-}
-
-func CreateProduct(config SubscriptionConfig) (string, error) {
-    product := paypal.Product{
-        Name: config.ProductName,
-        Description: config.ProductDescription,
-        Type: config.ProductType,
-        Category: config.ProductCategory,
-    }
-    createdProduct, err := paypalClient.CreateProduct(context.Background(), product)
-    if err != nil {
-        log.Printf("Creating Product Error: %s", err.Error());
-        return "", err
-    }
-    return createdProduct.ID, nil
-}
-
-type SubscriptionConfig struct {
-    Price string
-    Currency string
-    ProductName string
-    ProductDescription string
-    ProductType paypal.ProductType
-    ProductCategory paypal.ProductCategory
-
-    PlanName string
-    PlanDescription string
-
-    BrandName string
-    Interval paypal.IntervalUnit
-}
-
-func CreateNewSubscription(config SubscriptionConfig) (string, string, error){
-    productID, err := CreateProduct(config)
-    if err != nil {
-    }
-    planID, err := CreatePlan(productID, config)
-    if err != nil {
-    }
-    subscriptionID, approvalURL, err := CreateSubscription(planID, config)
-    if err != nil {
-    }
-    return subscriptionID, approvalURL, nil
-}
-
-func CreatePlan(productID string, config SubscriptionConfig) (string, error) {
-    plan := paypal.SubscriptionPlan{
-        ID: "TEST",
-        ProductId: productID,
-        Name: config.PlanName,
-        Description: config.PlanDescription,
-        Status: paypal.SubscriptionPlanStatusActive,
-        BillingCycles: []paypal.BillingCycle{
-            {
-                Frequency: paypal.Frequency{
-                    IntervalUnit: config.Interval,
-                    IntervalCount: 1,
-                },
-                TenureType: paypal.TenureTypeRegular,
-                Sequence: 1,
-                TotalCycles: 0,
-                PricingScheme: paypal.PricingScheme{
-                    FixedPrice: paypal.Money{
-                        Value: config.Price,
-                        Currency: config.Currency,
-                    },
-                },
-            },
-        },
-        PaymentPreferences: &paypal.PaymentPreferences{
-            AutoBillOutstanding: true,
-            SetupFeeFailureAction: paypal.SetupFeeFailureActionContinue,
-            PaymentFailureThreshold: 3,
-        },
-        Taxes: &paypal.Taxes{
-            Percentage: "19.0",
-            Inclusive: true,
-        },
-    }
-
-    createdPlay, err := paypalClient.CreateSubscriptionPlan(context.Background(), plan)
-    if err != nil {
-        log.Fatalf("Creating Plan Error: %s\n", err.Error())
-        return "", nil
-    }
-    return createdPlay.ID, nil
-}
-
-
-func CreateSubscription(planID string, config SubscriptionConfig) (string, string, error) {
-    subscription := paypal.SubscriptionBase{
-        PlanID: planID,
-        ApplicationContext: &paypal.ApplicationContext{
-            BrandName: config.BrandName,
-            UserAction: paypal.UserActionSubscribeNow,
-            ReturnURL: "http://localhost:8080/dashboard",
-            CancelURL: "http://localhost:8080/cancel",
-        },
-    }
-    createdSubscription, err := paypalClient.CreateSubscription(context.Background(), subscription)
-    if err != nil {
-        log.Fatalf("Create Subscription Error: %s\n", err.Error())
-    }
-
-    var approvalURL string
-    for _, link := range createdSubscription.Links {
-        if link.Rel == "approve" {
-            approvalURL = link.Href
-            break
-        }
-    }
-    return createdSubscription.ID, approvalURL, nil
-}
-
-func PayPalReturnURL(c *gin.Context) {
-    subscriptionID := c.Query("subscription_id")
-    if subscriptionID == "" {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "Subscription ID was not found"})
-        return
-    }
-
-    subscription, err := paypalClient.GetSubscriptionDetails(context.Background(), subscriptionID)
-    if err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-        return
-    }
-    if subscription.SubscriptionStatus == paypal.SubscriptionStatusActive {
-        c.JSON(http.StatusOK, gin.H{"t": "Active"})
-    } else {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "Subscription Not Active"})
-    }
-
-}
-
-func CreateSubscriptionHandler(c *gin.Context) {
-    config := SubscriptionConfig{
-        Price: "50.00",
-        Currency: "EUR",
-        ProductName: "SUB",
-        PlanDescription: "IM A TEST",
-        ProductCategory: paypal.ProductCategorySoftware,
-        ProductType: paypal.ProductTypeService,
-        
-        PlanName: "SUBSCRIPTION",
-        ProductDescription: "TEST",
-
-        BrandName: "MORITZ",
-        Interval: paypal.IntervalUnitYear,
-    }
-    subscriptionID, approvalURL, err := CreateNewSubscription(config)
-    if err != nil {
-        c.JSON(http.StatusOK, gin.H{"error": err.Error()})
-    }
-    
-    c.JSON(http.StatusOK, gin.H{"subscription_id": subscriptionID, "approval_url": approvalURL})
-}
-
 
 func Register(c *gin.Context) {
     var json struct {
@@ -369,19 +195,6 @@ func Payment(c *gin.Context) {
 
     c.JSON(http.StatusOK, gin.H{"status": charge.Status})
 }
-
-type PayPalAccessTokenResponse struct {
-    Scope       string `json:"scope"`
-    AccessToken string `json:"access_token"`
-    TokenType   string `json:"token_type"`
-    AppID       string `json:"app_id"`
-    ExpiresIn   int    `json:"expires_in"`
-    Nonce       string `json:"nonce"`
-}
-
-
-
-
 
 func HashPassword(password string) (string, error) {
     bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)

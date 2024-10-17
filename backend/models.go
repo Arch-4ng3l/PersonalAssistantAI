@@ -7,6 +7,7 @@ type User struct {
     Email string `gorm:"unique;not null"`
     Password string
     GoogleID string
+    SubscriptionStatus string
 }
 
 

@@ -9,6 +9,7 @@ import (
 
 func main() {
     cfg := config.LoadConfig()
+
     InitDB(cfg)
     InitOAuth(cfg)
     InitPayPal(cfg)
