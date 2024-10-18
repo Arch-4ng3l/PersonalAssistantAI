@@ -25,6 +25,9 @@ func main() {
         api.POST("/login", Login)
         api.GET("/payment", Payment)
         api.POST("/paypal", CreateSubscriptionHandler)
+        api.POST("/calendar-create", CreateEvent)
+        api.POST("/calendar-remove", RemoveEvent)
+        api.GET("/calendar-load", FetchCalenderData)
     }
 
     // OAuth routes
@@ -34,6 +37,9 @@ func main() {
     // Serve frontend pages
     r.GET("/", func(c *gin.Context) {
         c.HTML(http.StatusOK, "index.html", nil)
+    })
+    r.GET("/calendar", func(c *gin.Context) {
+        c.HTML(http.StatusOK, "calender.html", nil)
     })
     r.GET("/login", func(c *gin.Context) {
         c.HTML(http.StatusOK, "login.html", nil)

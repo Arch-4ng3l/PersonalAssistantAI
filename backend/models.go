@@ -1,6 +1,10 @@
 package main
 
-import "github.com/jinzhu/gorm"
+import (
+	"encoding/json"
+
+	"github.com/jinzhu/gorm"
+)
 
 type User struct {
     gorm.Model
@@ -8,6 +12,7 @@ type User struct {
     Password string
     GoogleID string
     SubscriptionStatus string
+    CalenderToken json.RawMessage `gorm:"type:jsonb"`
 }
 
 

@@ -193,3 +193,49 @@ func CreateSubscriptionHandler(c *gin.Context) {
     c.JSON(http.StatusOK, gin.H{"subscription_id": subscriptionID, "approval_url": approvalURL})
 }
 
+
+func CancelSubscription(subscriptionID, reason string) error {
+    return paypalClient.CancelSubscription(context.Background(),subscriptionID, reason)
+}
+
+func ActivateSubscription(subscriptionID string) error {
+    return paypalClient.ActivateSubscription(context.Background(), subscriptionID, "")
+}
+
+func SuspendSubscription(subscriptionID, reason string) error {
+    return paypalClient.SuspendSubscription(context.Background(), subscriptionID, reason)
+}
+
+func webhookHandler(c *gin.Context) {
+    _, err := paypalClient.VerifyWebhookSignature(context.Background(), c.Request, "")
+    if err != nil {
+        return
+    }
+}
+
+func verifySubscriptionHandler(c *gin.Context) {
+    var requestData struct {
+        SubscriptionID string `json:"subscription_id"`
+    }
+    err := c.ShouldBindBodyWithJSON(&requestData)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
+
+
+    // Get subscription details
+    subscription, err := paypalClient.GetSubscriptionDetails(context.Background(), requestData.SubscriptionID)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
+
+    // Send the subscription status back to the client
+    response := map[string]string{
+        "status": string(subscription.SubscriptionStatus),
+    }
+
+    c.JSON(http.StatusOK, response)
+}
+

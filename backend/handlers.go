@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/Arch-4ng3l/StartupFramework/backend/config"
 	"github.com/gin-gonic/gin"
@@ -17,11 +18,13 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
+	"google.golang.org/api/calendar/v3"
 )
 
 var (
     db *gorm.DB
     oauthConf *oauth2.Config
+    calendarCache map[string]*calendar.Service
 )
 
 func InitDB(config config.Config) {
@@ -34,6 +37,7 @@ func InitDB(config config.Config) {
         panic("failed to connect to databse")
     }
     db.AutoMigrate(&User{})
+    calendarCache = make(map[string]*calendar.Service)
 }
 
 
@@ -42,7 +46,10 @@ func InitOAuth(config config.Config) {
         RedirectURL:  "http://localhost:8080/auth/google/callback",
         ClientID:     config.GoogleClientID,
         ClientSecret: config.GoogleClientSecret,
-        Scopes:       []string{"https://www.googleapis.com/auth/userinfo.email"},
+        Scopes:       []string{
+            "https://www.googleapis.com/auth/userinfo.email",
+            calendar.CalendarScope,
+        },
         Endpoint:     google.Endpoint,
     }
 }
@@ -137,6 +144,7 @@ func GoogleCallback(c *gin.Context) {
         c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get user info"})
         return
     }
+
     defer resp.Body.Close()
     var userInfo struct {
         Email string `json:"email"`
@@ -152,17 +160,27 @@ func GoogleCallback(c *gin.Context) {
     if err := db.Where("google_id = ?", userInfo.ID).First(&user).Error; err != nil {
         // If not, create
         user = User{Email: userInfo.Email, GoogleID: userInfo.ID}
-        db.Create(&user)
+        tokenJSON, _ := json.Marshal(token)
+        user.CalenderToken = tokenJSON
+        if err := db.Create(&user).Error; err != nil {
+            log.Println(err.Error())
+        }
     }
+
+
 
     jwtToken, err := GenerateJWT(user.Email)
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating token"})
+        log.Println(err.Error())
         return
     }
+    service := GetCalender(oauthConf, user)
+    calendarCache[jwtToken] = service
 
     // Redirect to frontend with token
-    c.Redirect(http.StatusTemporaryRedirect, "http://localhost:8080/dashboard?token="+jwtToken)
+    c.SetCookie("token", jwtToken, int(time.Now().Add(time.Hour * 24 * 7).Unix()), "/", "", true, false)
+    c.Redirect(http.StatusTemporaryRedirect, "http://localhost:8080/calendar")
 }
 
 func Payment(c *gin.Context) {
@@ -194,6 +212,58 @@ func Payment(c *gin.Context) {
     }
 
     c.JSON(http.StatusOK, gin.H{"status": charge.Status})
+}
+
+
+func FetchCalenderData(c *gin.Context) {
+    token, _ := c.Cookie("token")
+    service := getServiceFromToken(token)
+    evenst, _ := service.Events.List("primary").TimeMin(time.Now().Format(time.RFC3339)).Do()
+    c.JSON(http.StatusOK, gin.H{"items": evenst.Items})
+}
+
+func getServiceFromToken(token string) *calendar.Service {
+    service, ok := calendarCache[token]
+    if !ok {
+        claims, err:= ValidateToken(token)
+        if err != nil {
+            log.Println(err.Error())
+        }
+        user := &User{}
+        if err := db.Where("email = ?", claims.Email).First(user).Error; err != nil {
+            log.Fatal(err)
+        }
+        service = GetCalender(oauthConf, *user)
+        calendarCache[token] = service
+    }
+    return service
+}
+
+func CreateEvent(c *gin.Context) {
+    token, _ := c.Cookie("token")
+
+    service := getServiceFromToken(token)
+    event := &calendar.Event{}
+    if err := c.ShouldBindBodyWithJSON(event); err != nil {
+        log.Fatalln(err.Error())
+    }
+    service.Events.Insert("primary", event).Do()
+}
+
+func RemoveEvent(c *gin.Context) {
+    token, _ := c.Cookie("token")
+
+    service := getServiceFromToken(token)
+
+    event := &calendar.Event{}
+
+    if err := c.ShouldBindBodyWithJSON(event); err != nil {
+        log.Fatal(err)
+    }
+
+    if err := service.Events.Delete("primary", event.Id).Do(); err != nil {
+        log.Println(err.Error())
+    }
 }
 
 func HashPassword(password string) (string, error) {

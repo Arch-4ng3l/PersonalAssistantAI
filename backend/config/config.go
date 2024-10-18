@@ -22,8 +22,9 @@ type Config struct {
 
     PayPalClientID string
     PayPalSecret string
+    PayPalWebhookID string
     PayPalMode string
-
+    OpenAISecret string
 }
 
 
@@ -47,5 +48,7 @@ func LoadConfig() Config {
         PayPalClientID:       os.Getenv("PAYPAL_CLIENT_ID"),
         PayPalSecret:         os.Getenv("PAYPAL_SECRET"),
         PayPalMode:           os.Getenv("PAYPAL_MODE"),
+        PayPalWebhookID: os.Getenv("PAYPAL_WEBHOOK_ID"),
+        OpenAISecret: os.Getenv("OPENAI_SECRET_KEY"),
     }
 }

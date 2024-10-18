@@ -1,8 +1,4 @@
 /* frontend/static/styles.css */
-body {
-    font-family: Arial, sans-serif;
-    margin: 20px;
-}
 
 input {
     margin: 5px 0;
@@ -12,4 +8,30 @@ input {
 
 button {
     padding: 10px 20px;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.calendar {
+    width: 80%;
+    margin: 50px auto;
+}
+
+/* Hide the half-hour grid lines */
+.fc .fc-timegrid-slot.fc-timegrid-slot-lane.fc-timegrid-slot-minor {
+  border-top: none;
+}
+
+/* Optional: Adjust the height of the time slots */
+.fc .fc-timegrid-slot {
+  height: 2em; /* Adjust this value as needed */
+}
+
+/* Customize the appearance of the hour lines */
+.fc .fc-timegrid-slot.fc-timegrid-slot-lane.fc-timegrid-slot-major {
+  border-top: 1px solid #ccc; /* Change the color and style as desired */
 }
