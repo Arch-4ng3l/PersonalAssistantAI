@@ -11,6 +11,7 @@ import (
 
 	"github.com/Arch-4ng3l/StartupFramework/backend/config"
 	"github.com/gin-gonic/gin"
+	"github.com/google/generative-ai-go/genai"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/stripe/stripe-go/v72"
@@ -25,6 +26,8 @@ var (
     db *gorm.DB
     oauthConf *oauth2.Config
     calendarCache map[string]*calendar.Service
+    geminiClient *genai.Client
+    conversationsCache map[string]*genai.ChatSession
 )
 
 func InitDB(config config.Config) {
@@ -38,6 +41,7 @@ func InitDB(config config.Config) {
     }
     db.AutoMigrate(&User{})
     calendarCache = make(map[string]*calendar.Service)
+    conversationsCache = make(map[string]*genai.ChatSession)
 }
 
 
@@ -180,7 +184,7 @@ func GoogleCallback(c *gin.Context) {
 
     // Redirect to frontend with token
     c.SetCookie("token", jwtToken, int(time.Now().Add(time.Hour * 24 * 7).Unix()), "/", "", true, false)
-    c.Redirect(http.StatusTemporaryRedirect, "http://localhost:8080/calendar")
+    c.Redirect(http.StatusTemporaryRedirect, "http://localhost:8080/chat")
 }
 
 func Payment(c *gin.Context) {
@@ -248,12 +252,20 @@ func CreateEvent(c *gin.Context) {
         log.Fatalln(err.Error())
     }
     service.Events.Insert("primary", event).Do()
+
+    session, ok := conversationsCache[token]
+
+    if !ok {
+        return
+    }
+    UpdateSchedule(session, event, "Create")
 }
 
 func RemoveEvent(c *gin.Context) {
     token, _ := c.Cookie("token")
 
     service := getServiceFromToken(token)
+
 
     event := &calendar.Event{}
 
@@ -264,6 +276,55 @@ func RemoveEvent(c *gin.Context) {
     if err := service.Events.Delete("primary", event.Id).Do(); err != nil {
         log.Println(err.Error())
     }
+    session, ok := conversationsCache[token]
+
+    if !ok {
+        return
+    }
+    UpdateSchedule(session, event, "Remove")
+}
+
+
+func AIChat(c *gin.Context) {
+    token, err := c.Cookie("token")
+    service := getServiceFromToken(token)
+
+    evenst, _ := service.Events.List("primary").TimeMin(time.Now().Format(time.RFC3339)).Do()
+    eventStr := ""
+    for _, event := range evenst.Items {
+        eventStr += fmt.Sprint(event.Summary, " start: ",event.Start.DateTime, "end: ",  event.End.DateTime, ",")
+    }
+    fmt.Println(eventStr)
+
+    if err != nil {
+        log.Println(err.Error())
+        return
+    }
+
+    var message struct {
+        Content string `json:"message"`
+    }
+
+    if err := c.ShouldBindBodyWithJSON(&message); err != nil {
+        log.Println(err.Error())
+        return
+    }
+
+    session, ok := conversationsCache[token]
+
+    if !ok {
+        session = StartChatSession(geminiClient, eventStr)
+        conversationsCache[token] = session
+    }
+
+    response, err := SendGeminiMessage(session, message.Content)
+
+    if err != nil {
+        log.Println(err.Error())
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"reply": response})
 }
 
 func HashPassword(password string) (string, error) {
@@ -275,4 +336,6 @@ func CheckPasswordHash(password, hash string) bool {
     err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
     return err == nil
 }
+
+
 

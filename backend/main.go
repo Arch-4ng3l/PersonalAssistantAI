@@ -13,6 +13,7 @@ func main() {
     InitDB(cfg)
     InitOAuth(cfg)
     InitPayPal(cfg)
+    geminiClient = GetGeminiClient(cfg)
 
     r := gin.Default()
 
@@ -28,6 +29,7 @@ func main() {
         api.POST("/calendar-create", CreateEvent)
         api.POST("/calendar-remove", RemoveEvent)
         api.GET("/calendar-load", FetchCalenderData)
+        api.POST("/ai-chat", AIChat)
     }
 
     // OAuth routes
@@ -37,6 +39,9 @@ func main() {
     // Serve frontend pages
     r.GET("/", func(c *gin.Context) {
         c.HTML(http.StatusOK, "index.html", nil)
+    })
+    r.GET("/chat", func(c *gin.Context) {
+        c.HTML(http.StatusOK, "chat.html", nil)
     })
     r.GET("/calendar", func(c *gin.Context) {
         c.HTML(http.StatusOK, "calender.html", nil)
