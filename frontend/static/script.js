@@ -26,6 +26,62 @@ function getGoogleEvent(info, title, id) {
 }
 var calendar;
 
+
+function findEvent(title, start, end) {
+    let event = calendar.getEvents().find(
+        event => event.title === title && event.startStr === start && event.endStr == end 
+    )
+    return event;
+}
+
+function moveEventButton(title, start, end, movedStart, movedEnd) {
+    let event = findEvent(title, start, end);
+
+    if (confirm('Do you want to move this event?')) {
+        fetch("/api/calendar-remove", {
+            method: "POST",
+            body: getGoogleEvent(event, "", event.id),
+        })
+        event.remove();
+        M.toast({html: 'Das Ereignis wurde gelöscht.', displayLength: 2000});
+    }
+
+    let id  = getRandomHex32();
+    calendar.addEvent({
+        title: title,
+        start: movedStart,
+        end: movedEnd,
+        allDay: false,
+        id: id,
+    });
+
+    let info = {
+        startStr: movedStart,
+        endStr: movedEnd,
+    }
+
+    fetch("/api/calendar-create", {
+        method: "POST",
+        body: getGoogleEvent(info, title, id),
+    })
+    document.getElementById(title).disabled = true;
+
+}
+
+function removeEventButton(title, start, end) {
+    let event = findEvent(title, start, end);
+
+    if (confirm('Do you want to delete this event?')) {
+        fetch("/api/calendar-remove", {
+            method: "POST",
+            body: getGoogleEvent(event, "", event.id),
+        })
+        event.remove();
+        M.toast({html: 'Das Ereignis wurde gelöscht.', displayLength: 2000});
+        document.getElementById(title).disabled = true;
+    }
+}
+
 function addEventButton(title, start, end) {
     let id  = getRandomHex32();
     calendar.addEvent({
@@ -46,6 +102,7 @@ function addEventButton(title, start, end) {
         method: "POST",
         body: getGoogleEvent(info, title, id),
     })
+    document.getElementById(title).disabled = true;
 }
 
 var selectedEventInfo;

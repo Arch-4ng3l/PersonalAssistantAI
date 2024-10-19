@@ -4,7 +4,7 @@
     --light-gray: #f8f9fa;
     --dark-gray: #343a40;
     --border-radius: 8px;
-    --transition-speed: 0.6s;
+    --transition-speed: 0.2s;
     --font-family: 'Roboto', sans-serif;
 
     --primary-color: #35007a;       /* Primary color */
@@ -54,6 +54,7 @@ button:hover {
 
 .add-btn {
     background-color: var(--secondary-color);
+    border-radius: 20px;
     transition: background-color var(--transition-speed);
 }
 .add-btn:hover {
@@ -221,18 +222,19 @@ button:hover {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    will-change: transform, opacity;
     font-family: var(--font-family);
-    animation: slideUp var(--transition-speed) ease-out;
+    animation: slideUp 1.5s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 @keyframes slideUp {
-    from {
+    0% {
         opacity: 0;
-        transform: translateY(50px);
+        transform: translate3d(0, 50px, 0);
     }
-    to {
+    100% {
         opacity: 1;
-        transform: translateY(0);
+        transform: translate3d(0, 0, 0);
     }
 }
 
@@ -430,7 +432,6 @@ button:hover {
     padding: 40px;
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    :40%;
     display: flex;
     align-items: center;
     flex-direction: column;
@@ -448,7 +449,7 @@ h1 {
     margin: 10px 0;
     padding: 12px 20px;
     color: white;
-    background-color: #007bff;
+    background-color: var(--on-background);
     border: none;
     border-radius: 6px;
     text-decoration: none;
@@ -470,3 +471,129 @@ h1 {
 
 
 
+.payment-container {
+    top: 10px;
+    max-width: 600px;
+    margin: 50px auto;
+    background-color: var(--surface-color);
+    padding: 30px;
+    border-radius: var(--border-radius);
+    box-shadow: 2px 4px 6px rgba(242, 242, 242, 0.591);
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.header i {
+    color: var(--main-green);
+    margin-bottom: 10px;
+}
+
+.header h1 {
+    font-size: 2rem;
+    color: var(--on-background);
+}
+
+.subscription-details {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.subscription-details h2 {
+    font-size: 1.5rem;
+    color: var(--main-green);
+}
+
+.subscription-details p {
+    font-size: 1.25rem;
+    color: var(--light-gray);
+}
+
+.payment-section {
+    margin-bottom: 30px;
+}
+
+.payment-section h3 {
+    margin-bottom: 20px;
+    color: var(--on-background);
+}
+
+.btn-primary, .btn-paypal {
+    width: 100%;
+    padding: 12px;
+    font-size: 1rem;
+    border-radius: var(--border-radius);
+    transition: background-color var(--transition-speed);
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border: none;
+    color: var(--on-primary);
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-variant);
+}
+
+.btn-paypal {
+    background-color: var(--secondary-color);
+    border: none;
+    color: var(--on-secondary);
+}
+
+.btn-paypal:hover {
+    background-color: #006d6c; /* Slightly darker shade for hover */
+}
+
+.form-control {
+    border-radius: var(--border-radius);
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 1px solid var(--fc-border-color);
+    background-color: var(--background-color);
+    color: var(--on-background);
+}
+
+.form-control::placeholder {
+    color: var(--light-gray);
+}
+
+.form-control:focus {
+    border-color: var(--main-green);
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+    background-color: var(--surface-color);
+    color: var(--on-background);
+}
+
+footer {
+    text-align: center;
+    margin-top: 20px;
+    color: var(--light-gray);
+}
+
+/* Dark Mode Adjustments for Buttons and Inputs */
+.btn-primary, .btn-paypal, .form-control {
+    transition: background-color var(--transition-speed), color var(--transition-speed);
+}
+
+/* Responsive Design */
+@media (max-width: 576px) {
+    .container {
+        padding: 20px;
+    }
+
+    .header h1 {
+        font-size: 1.5rem;
+    }
+
+    .subscription-details h2 {
+        font-size: 1.25rem;
+    }
+
+    .subscription-details p {
+        font-size: 1rem;
+    }
+}

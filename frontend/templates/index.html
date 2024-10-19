@@ -1,23 +1,169 @@
-<!-- frontend/templates/index.html -->
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Home</title>
-    <link rel="stylesheet" href="/static/styles.css">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart AI Personal Assistant</title>
+    <link rel="stylesheet" href="/static/index.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 </head>
 <body>
-   <div class="login-container">
-        <h1>Welcome to MyApp</h1>
-        <div class="login-links">
-            <a href="/login">Login</a>
-            <a href="/register">Register</a>
-            <a href="/auth/google/login" class="g_id_signin">
-                <i class="bi bi-google"></i>
-                Continue with Google
-            </a>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="logo">AI Assistant</div>
+            <nav>
+                <ul>
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#how-it-works">How It Works</a></li>
+                    <li><a href="#testimonials">Testimonials</a></li>
+                    <li><a href="#pricing">Pricing</a></li>
+                    <li><a href="#contact" class="cta">Get Started</a></li>
+                </ul>
+            </nav>
         </div>
-    </div>
+    </header>
 
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1>Streamline Your Schedule with Your Smart AI Personal Assistant</h1>
+                <p>Effortlessly manage your calendar, schedule meetings, and stay organized with intelligent automation.</p>
+                <a href="#pricing" class="btn-primary">Get Started</a>
+            </div>
+            <div class="hero-image">
+                <img src="https://via.placeholder.com/500" alt="AI Assistant">
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <h2>Key Features</h2>
+            <div class="features-grid">
+                <div class="feature">
+                    <i class="fas fa-calendar-check"></i>
+                    <h3>Smart Scheduling</h3>
+                    <p>Automatically find optimal meeting times that fit your schedule.</p>
+                </div>
+                <div class="feature">
+                    <i class="fas fa-sync-alt"></i>
+                    <h3>Calendar Integration</h3>
+                    <p>Sync seamlessly with Google, Outlook, Apple Calendar, and more.</p>
+                </div>
+                <div class="feature">
+                    <i class="fas fa-bell"></i>
+                    <h3>Reminders & Notifications</h3>
+                    <p>Stay informed about upcoming events with timely alerts.</p>
+                </div>
+                <div class="feature">
+                    <i class="fas fa-comments"></i>
+                    <h3>Natural Language Processing</h3>
+                    <p>Schedule appointments using simple text commands.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section id="how-it-works" class="how-it-works">
+        <div class="container">
+            <h2>How It Works</h2>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Sign Up</h3>
+                    <p>Create your account in minutes.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>Connect Your Calendar</h3>
+                    <p>Sync with your preferred calendar service.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>Let the AI Do the Work</h3>
+                    <p>Automatically organize your schedule with intelligent planning.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section id="testimonials" class="testimonials">
+        <div class="container">
+            <h2>What Our Users Say</h2>
+            <div class="testimonial-slider">
+                <div class="testimonial">
+                    <p>"This AI assistant has transformed the way I manage my time. It’s like having a personal secretary!"</p>
+                    <h4>— Jane Doe</h4>
+                </div>
+                <div class="testimonial">
+                    <p>"Effortlessly keeps my schedule organized and helps me stay on top of my tasks."</p>
+                    <h4>— John Smith</h4>
+                </div>
+                <div class="testimonial">
+                    <p>"The natural language processing feature is a game-changer for scheduling meetings."</p>
+                    <h4>— Emily Johnson</h4>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section id="pricing" class="pricing">
+        <div class="container">
+            <h2>Pricing Plans</h2>
+            <div class="pricing-cards">
+                <div class="card">
+                    <h3>Basic</h3>
+                    <p class="price">10€<span>per month</span></p>
+                    <ul>
+                        <li>Connect Directly To Youre Google Calendar</li>
+                        <li>Basic AI Model</li>
+                        <li>Email Support</li>
+                    </ul>
+                    <a href="#contact" id="basic" class="btn-secondary">Choose Plan</a>
+                </div>
+                <div class="card featured">
+                    <h3>Premium</h3>
+                    <p class="price">20€<span>per month</span></p>
+                    <ul>
+                        <li>Connect Directly To Youre Google Calendar</li>
+                        <li>Advanced AI Model</li>
+                        <li>Priority Support</li>
+                    </ul>
+                    <a href="#contact" id="premium" class="btn-primary">Choose Plan</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-links">
+                <a href="#features">Features</a>
+                <a href="#how-it-works">How It Works</a>
+                <a href="#pricing">Pricing</a>
+                <a href="#contact">Contact</a>
+            </div>
+            <div class="social-media">
+                <a href="#"><i class="fab fa-facebook-f"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+                <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                <a href="#"><i class="fab fa-instagram"></i></a>
+            </div>
+            <p>&copy; 2024 MORITZ. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="/static/index.js"></script>
 </body>
 </html>

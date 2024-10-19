@@ -14,8 +14,10 @@ import (
 	"github.com/google/generative-ai-go/genai"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
-	"github.com/stripe/stripe-go/v72"
-	"github.com/stripe/stripe-go/v72/charge"
+	"github.com/plutov/paypal/v4"
+	"github.com/stripe/stripe-go/v80"
+	"github.com/stripe/stripe-go/v80/customer"
+	"github.com/stripe/stripe-go/v80/subscription"
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -56,6 +58,43 @@ func InitOAuth(config config.Config) {
         },
         Endpoint:     google.Endpoint,
     }
+}
+
+func UpdateSubscriptionStatus(userEmail, newStatus , newPlan string) error {
+    update := map[string]string{
+        "subscription_status": newStatus,
+        "subscription_plan": newPlan,
+    }
+    return db.Model(&User{}).Where("email = ?", userEmail).Updates(update).Error
+}
+
+
+func HandleAuthentication(c *gin.Context) {
+    token, err := c.Cookie("token")
+    if err != nil {
+        log.Println(err.Error())
+        return
+    }
+
+    claims, err := ValidateToken(token)
+    if err != nil {
+        log.Println(err.Error())
+        return
+    }
+    user := &User{}
+
+    if err := db.Where("email = ?", claims.Email).First(user).Error; err != nil {
+        log.Println(err.Error())
+        return 
+    }
+
+    if user.SubscriptionStatus != string(paypal.SubscriptionStatusActive) &&  user.SubscriptionStatus != string(stripe.SubscriptionStatusActive) {
+        c.Redirect(http.StatusPermanentRedirect, "/payment")
+        return
+    }
+
+    c.HTML(http.StatusOK, "chat.html", nil)
+
 }
 
 func Register(c *gin.Context) {
@@ -169,9 +208,9 @@ func GoogleCallback(c *gin.Context) {
         if err := db.Create(&user).Error; err != nil {
             log.Println(err.Error())
         }
+
+        c.Redirect(http.StatusTemporaryRedirect, "http://localhost:8080/payment")
     }
-
-
 
     jwtToken, err := GenerateJWT(user.Email)
     if err != nil {
@@ -184,10 +223,13 @@ func GoogleCallback(c *gin.Context) {
 
     // Redirect to frontend with token
     c.SetCookie("token", jwtToken, int(time.Now().Add(time.Hour * 24 * 7).Unix()), "/", "", true, false)
+
     c.Redirect(http.StatusTemporaryRedirect, "http://localhost:8080/chat")
 }
 
 func Payment(c *gin.Context) {
+    token, _ := c.Cookie("token")
+    claims, _ := ValidateToken(token)
     var json struct {
         Token  string `json:"token" binding:"required"`
         Amount int64  `json:"amount" binding:"required"`
@@ -199,23 +241,33 @@ func Payment(c *gin.Context) {
     }
 
     stripe.Key = os.Getenv("STRIPE_SECRET_KEY")
+    customerParams := &stripe.CustomerParams{
+        Email: stripe.String(claims.Email),
+    }
+    customerStripe, err := customer.New(customerParams)
 
-    params := &stripe.ChargeParams{
-        Amount:       stripe.Int64(json.Amount),
+    params := &stripe.SubscriptionParams{
         Currency:     stripe.String(string(stripe.CurrencyEUR)),
-        Description:  stripe.String("Payment from Go App"),
-        Source:       &stripe.SourceParams{
-            Token: stripe.String(json.Token),
+        Description:  stripe.String("Premium Subscription"),
+        Items: []*stripe.SubscriptionItemsParams{
+            {
+                Price: stripe.String("20.0"),
+            },
         },
+        Customer: stripe.String(customerStripe.ID),
     }
 
-    charge, err := charge.New(params)
+    sub, err := subscription.New(params)
     if err != nil {
         c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
         return
     }
+    if err != UpdateSubscriptionStatus(claims.Email, string(sub.Status), Premium) {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
 
-    c.JSON(http.StatusOK, gin.H{"status": charge.Status})
+    c.JSON(http.StatusOK, gin.H{"status": sub.Status})
 }
 
 
@@ -284,21 +336,40 @@ func RemoveEvent(c *gin.Context) {
     UpdateSchedule(session, event, "Remove")
 }
 
+func GetUserPlan(token string) string {
+    claims, err := ValidateToken(token)
+    if err != nil {
+        log.Println(err.Error())
+        return ""
+    }
+
+    user := &User{}
+    err = db.Where("email = ?", claims.Email).First(user).Error
+
+    if err != nil {
+        log.Println(err.Error())
+        return ""
+    }
+    return user.SubscriptionPlan
+}
+
 
 func AIChat(c *gin.Context) {
     token, err := c.Cookie("token")
     service := getServiceFromToken(token)
 
-    evenst, _ := service.Events.List("primary").TimeMin(time.Now().Format(time.RFC3339)).Do()
-    eventStr := ""
-    for _, event := range evenst.Items {
-        eventStr += fmt.Sprint(event.Summary, " start: ",event.Start.DateTime, "end: ",  event.End.DateTime, ",")
-    }
-    fmt.Println(eventStr)
+    session, ok := conversationsCache[token]
 
-    if err != nil {
-        log.Println(err.Error())
-        return
+    if !ok {
+        evenst, _ := service.Events.List("primary").TimeMin(time.Now().Format(time.RFC3339)).Do()
+        eventStr := ""
+        for _, event := range evenst.Items {
+            eventStr += fmt.Sprint(event.Summary, " start: ",event.Start.DateTime, "end: ",  event.End.DateTime, ",")
+
+        }
+        plan := GetUserPlan(token)
+        session = StartChatSession(geminiClient, eventStr, plan)
+        conversationsCache[token] = session
     }
 
     var message struct {
@@ -308,13 +379,6 @@ func AIChat(c *gin.Context) {
     if err := c.ShouldBindBodyWithJSON(&message); err != nil {
         log.Println(err.Error())
         return
-    }
-
-    session, ok := conversationsCache[token]
-
-    if !ok {
-        session = StartChatSession(geminiClient, eventStr)
-        conversationsCache[token] = session
     }
 
     response, err := SendGeminiMessage(session, message.Content)

@@ -30,6 +30,7 @@ func main() {
         api.POST("/calendar-remove", RemoveEvent)
         api.GET("/calendar-load", FetchCalenderData)
         api.POST("/ai-chat", AIChat)
+        api.GET("/paypal-check", PayPalReturnURL)
     }
 
     // OAuth routes
@@ -40,20 +41,17 @@ func main() {
     r.GET("/", func(c *gin.Context) {
         c.HTML(http.StatusOK, "index.html", nil)
     })
-    r.GET("/chat", func(c *gin.Context) {
-        c.HTML(http.StatusOK, "chat.html", nil)
-    })
-    r.GET("/calendar", func(c *gin.Context) {
-        c.HTML(http.StatusOK, "calender.html", nil)
-    })
+
+    r.GET("/chat",  HandleAuthentication)
+
     r.GET("/login", func(c *gin.Context) {
         c.HTML(http.StatusOK, "login.html", nil)
     })
     r.GET("/register", func(c *gin.Context) {
         c.HTML(http.StatusOK, "register.html", nil)
     })
-    r.GET("/dashboard", func(c *gin.Context) {
-        c.HTML(http.StatusOK, "dashboard.html", nil)
+    r.GET("/payment", func(c *gin.Context) {
+        c.HTML(http.StatusOK, "payment.html", nil)
     })
 
     r.Run(":8080") // Listen and serve on 0.0.0.0:8080

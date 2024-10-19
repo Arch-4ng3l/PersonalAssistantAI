@@ -47,8 +47,15 @@ func GetGeminiClient(config config.Config) *genai.Client {
     return client
 }
 
-func StartChatSession(client *genai.Client, startPrompt string) *genai.ChatSession {
-    model := client.GenerativeModel("gemini-1.5-flash")
+func StartChatSession(client *genai.Client, startPrompt string, plan string) *genai.ChatSession {
+    var model *genai.GenerativeModel
+    if plan == Premium {
+	model = client.GenerativeModel("gemini-1.5-pro")
+    } else if plan == Basic {
+	model = client.GenerativeModel("gemini-1.5-flash")
+    } else {
+	return nil
+    }
     model.SetTemperature(0.6)
     year, month, day := time.Now().Date()
     now := fmt.Sprint(day, ".", month, ".", year)
@@ -56,15 +63,20 @@ func StartChatSession(client *genai.Client, startPrompt string) *genai.ChatSessi
     model.SystemInstruction = &genai.Content{
 	Parts: []genai.Part{
 		genai.Text(
-		    `Alle deine Antworten müssen in HTML sein und nicht in Markdown.
-		    Du bist ein persönlicher Assistent und hilfst dabei zu planen und zu organisieren.
-		    Heute ist:` + now + 
-		    `. Der aktuelle Kalender lautet:` +  startPrompt + `
-		    . Wenn du ein neues Event erstellst, sage dem Nutzer die Start- und Endzeit des Events.
-		    Füge zusätzlich einen Text in folgendem Format mit den korrekten Werten ein, damit der Nutzer das Event mit einem Klick hinzufügen kann:
-		    <button class="add-btn" onClick="addEventButton(title, start, end)">Add title to Calendar</button>
-		    Ersetze dabei title, start und end durch die entsprechenden Zeichenketten. Aber mache das NUR wenn ein neues Event erstellt wird.
-		    Wenn kein Event Neu erstellt werden soll benutzt du diesen button nicht.
+		`All your responses must be in HTML and not in Markdown.
+		You are a personal assistant and help with planning and organizing.
+		Today is: ` + now + 
+		`. The current calendar is:` + startPrompt + `
+		. When you create a new event, inform the user of the event's start and end times.
+		Additionally, insert text in the following format with the correct values so that the user can add the event with a single click:
+		<button class="add-btn" id="title" onClick="addEventButton(title, start, end)">Add title to Calendar</button>
+		Or this text when the user wants to remove an event
+		<button class="add-btn" id="title"  onClick="removeEventButton(title, start, end)">Remove title from Calendar</button>
+		Or this text when the user wants to move an event
+		<button class="add-btn" id="title"  onClick="moveEventButton(title, start, end, movedStart, movedEnd)">Move title</button>
+		Replace title, start, end, movedStart and movedEnd  with the corresponding strings. But do this ONLY when a new event is created.
+		If no new event is to be created or removed, do not use this button.
+		The button is for the user to approve the action so you can't do anything without his action.
 		`,
 	    ),
 	},

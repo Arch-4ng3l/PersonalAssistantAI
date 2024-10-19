@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Subscription Payment</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="/static/styles.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <style>
+    </style>
+</head>
+<body>
+    <div class="payment-container">
+        <!-- Header -->
+        <div class="header">
+            <i class="fas fa-lock fa-3x text-success mb-3"></i>
+            <h1>Secure Payment</h1>
+        </div>
+
+        <!-- Subscription Details -->
+        <div class="subscription-details">
+            <h2 id="plan">Tier Subscription</h2>
+            <p class="h4" id="price">20€ / Month</p>
+        </div>
+
+        <!-- Stripe Payment Form -->
+        <div class="payment-section">
+            <h3>Pay with Credit Card</h3>
+            <form id="paymentForm">
+                <input type="text" id="cardNumber" class="form-control" placeholder="Card Number" required />
+                <div class="row">
+                    <div class="col-6">
+                        <input type="text" id="expMonth" class="form-control" placeholder="Expiry Month (MM)" required />
+                    </div>
+                    <div class="col-6">
+                        <input type="text" id="expYear" class="form-control" placeholder="Expiry Year (YY)" required />
+                    </div>
+                </div>
+                <input type="text" id="cvc" class="form-control" placeholder="CVC" required />
+                <button type="submit" class="btn btn-primary mt-3">
+                    <i class="fab fa-cc-stripe me-2"></i> Pay with Stripe
+                </button>
+            </form>
+        </div>
+
+        <!-- PayPal Payment Button -->
+        <div class="payment-section">
+            <h3>Or Pay with PayPal</h3>
+            <button id="payPalButton" class="btn btn-paypal">
+                <i class="fab fa-paypal me-2"></i> Pay with PayPal
+            </button>
+        </div>
+
+        <!-- Footer -->
+        <footer>
+            &copy; 2024 MORITZ. All rights reserved.
+        </footer>
+    </div>
+
+    <!-- Bootstrap JS Bundle (Includes Popper) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Font Awesome JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <!-- Stripe JS -->
+    <script src="https://js.stripe.com/v3/"></script>
+    <!-- PayPal SDK -->
+    <script src="https://www.paypal.com/sdk/js?client-id={{.PayPalClientID}}&currency=EUR"></script>
+    <!-- Custom JavaScript -->
+    <script>
+        const plan = sessionStorage.getItem("plan");
+        const price = sessionStorage.getItem("price");
+        sessionStorage.clear();
+        document.getElementById("price").innerText = price + "€ /Month"
+        document.getElementById("plan").innerText = plan + document.getElementById("plan").innerText;
+
+        // Stripe payment handler
+        document.getElementById('paymentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            // Collect form data
+            const cardNumber = document.getElementById('cardNumber').value;
+            const expMonth = document.getElementById('expMonth').value;
+            const expYear = document.getElementById('expYear').value;
+            const cvc = document.getElementById('cvc').value;
+
+            // TODO: Implement Stripe Elements for secure card handling in production
+
+            const response = await fetch('/api/payment', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({token: 'tok_visa'}) // Replace with actual token from Stripe
+            });
+
+            const data = await response.json();
+            if (data.status === 'succeeded') {
+                alert('Stripe Payment successful!');
+                // Optionally, redirect the user or update the UI
+            } else {
+                alert('Stripe Payment failed: ' + data.error);
+            }
+        });
+
+        // PayPal payment handler
+        document.getElementById('payPalButton').addEventListener('click', async () => {
+            fetch("/api/paypal", {
+                method: "POST",
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    "productName": plan,
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    window.location.href = data.approval_url;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('PayPal Payment failed. Please try again.');
+                });
+        });
+    </script>
+</body>
+</html>
+

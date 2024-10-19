@@ -12,8 +12,13 @@ import (
 	"github.com/plutov/paypal/v4"
 )
 
+type SubscriptionPlan struct {
+    SubscriptionID string
+    ApprovalURL string
+}
 var paypalClient *paypal.Client
-var subscriptionPlans map[string]*SubscriptionConfig
+var subscriptionPlans map[string]*SubscriptionPlan
+var subscriptionIDs map[string]string
 
 type SubscriptionConfig struct {
     Price string `json:"price"`
@@ -38,7 +43,8 @@ func InitPayPal(config config.Config) {
     client.SetLog(os.Stdout)
 
     paypalClient = client
-    subscriptionPlans = make(map[string]*SubscriptionConfig)
+    subscriptionPlans = make(map[string]*SubscriptionPlan)
+    subscriptionIDs= make(map[string]string)
     readPayPalJson()
 }
 
@@ -47,11 +53,12 @@ func CreateProduct(config SubscriptionConfig) (string, error) {
         Name: config.ProductName,
         Description: config.ProductDescription,
         Type: config.ProductType,
-        Category: config.ProductCategory,
+        //Category: config.ProductCategory,
     }
     createdProduct, err := paypalClient.CreateProduct(context.Background(), product)
+
     if err != nil {
-        log.Printf("Creating Product Error: %s", err.Error());
+        log.Fatalf("Creating Product Error: %s", err.Error());
         return "", err
     }
     return createdProduct.ID, nil
@@ -60,12 +67,15 @@ func CreateProduct(config SubscriptionConfig) (string, error) {
 func CreateNewSubscription(config SubscriptionConfig) (string, string, error){
     productID, err := CreateProduct(config)
     if err != nil {
+        log.Println("PRODUCT", err.Error())
     }
     planID, err := CreatePlan(productID, config)
     if err != nil {
+        log.Println("PLAN", err.Error())
     }
     subscriptionID, approvalURL, err := CreateSubscription(planID, config)
     if err != nil {
+        log.Println("SUB", err.Error())
     }
     return subscriptionID, approvalURL, nil
 }
@@ -120,8 +130,8 @@ func CreateSubscription(planID string, config SubscriptionConfig) (string, strin
         ApplicationContext: &paypal.ApplicationContext{
             BrandName: config.BrandName,
             UserAction: paypal.UserActionSubscribeNow,
-            ReturnURL: "http://localhost:8080/dashboard",
-            CancelURL: "http://localhost:8080/cancel",
+            ReturnURL: "http://localhost:8080/api/paypal-check",
+            CancelURL: "http://localhost:8080/payment",
         },
     }
     createdSubscription, err := paypalClient.CreateSubscription(context.Background(), subscription)
@@ -141,18 +151,37 @@ func CreateSubscription(planID string, config SubscriptionConfig) (string, strin
 
 func PayPalReturnURL(c *gin.Context) {
     subscriptionID := c.Query("subscription_id")
+    token, err := c.Cookie("token")
+    if err != nil {
+        log.Println(err.Error())
+    }
+    claims, err := ValidateToken(token)
+
+    if err != nil {
+        log.Println(err.Error())
+    }
     if subscriptionID == "" {
         c.JSON(http.StatusBadRequest, gin.H{"error": "Subscription ID was not found"})
         return
     }
 
     subscription, err := paypalClient.GetSubscriptionDetails(context.Background(), subscriptionID)
+    log.Println(subscription.ShippingAmount.Value)
     if err != nil {
         c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
         return
     }
+
     if subscription.SubscriptionStatus == paypal.SubscriptionStatusActive {
-        c.JSON(http.StatusOK, gin.H{"t": "Active"})
+        plan := subscriptionIDs[subscriptionID]
+        err = UpdateSubscriptionStatus(claims.Email, string(subscription.SubscriptionStatus), plan)
+
+        if err != nil {
+            log.Println(err.Error())
+            return
+        }
+
+        c.Redirect(http.StatusPermanentRedirect, "/chat")
     } else {
         c.JSON(http.StatusBadRequest, gin.H{"error": "Subscription Not Active"})
     }
@@ -170,27 +199,31 @@ func readPayPalJson() {
     if err := json.NewDecoder(file).Decode(&content); err != nil {
     }
     for _, config := range content.Items {
-        subscriptionPlans[config.PlanName] = &config
+        subscriptionID, approvalURL, _ := CreateNewSubscription(config)
+        subscriptionPlans[config.PlanName] = &SubscriptionPlan{
+            SubscriptionID: subscriptionID,
+            ApprovalURL: approvalURL,
+        }
+        subscriptionIDs[subscriptionID] = config.PlanName
     }
 }
 
+type UserSubscriptionRequest struct {
+    ProductName string `json:"productName"`
+}
+
 func CreateSubscriptionHandler(c *gin.Context) {
-    productName := c.Query("productName")
-    if productName == "" {
+    req := UserSubscriptionRequest{}
+    if err := c.ShouldBindBodyWithJSON(&req); err != nil {
         c.JSON(http.StatusBadRequest, gin.H{"error": "No Valid  Product Was Given"})
     }
-    config, ok := subscriptionPlans[productName]
+    subscriptionPlan, ok := subscriptionPlans[req.ProductName]
 
     if !ok {
         c.JSON(http.StatusBadRequest, gin.H{"error": "Product Was Not Found"})
     }
 
-    subscriptionID, approvalURL, err := CreateNewSubscription(*config)
-
-    if err != nil {
-        c.JSON(http.StatusOK, gin.H{"error": err.Error()})
-    }
-    c.JSON(http.StatusOK, gin.H{"subscription_id": subscriptionID, "approval_url": approvalURL})
+    c.JSON(http.StatusOK, gin.H{"subscription_id": subscriptionPlan.SubscriptionID, "approval_url": subscriptionPlan.ApprovalURL})
 }
 
 
@@ -222,7 +255,6 @@ func verifySubscriptionHandler(c *gin.Context) {
         c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
         return
     }
-
 
     // Get subscription details
     subscription, err := paypalClient.GetSubscriptionDetails(context.Background(), requestData.SubscriptionID)
