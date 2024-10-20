@@ -159,14 +159,18 @@ func PayPalReturnURL(c *gin.Context) {
 
     if err != nil {
         log.Println(err.Error())
+        return
     }
+
     if subscriptionID == "" {
+        log.Println("NO SUB ID")
         c.JSON(http.StatusBadRequest, gin.H{"error": "Subscription ID was not found"})
         return
     }
 
     subscription, err := paypalClient.GetSubscriptionDetails(context.Background(), subscriptionID)
     if err != nil {
+        log.Println(err.Error())
         c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
         return
     }
@@ -182,6 +186,7 @@ func PayPalReturnURL(c *gin.Context) {
 
         c.Redirect(http.StatusPermanentRedirect, "/chat")
     } else {
+        log.Println("error")
         c.JSON(http.StatusBadRequest, gin.H{"error": "Subscription Not Active"})
     }
 
@@ -219,7 +224,9 @@ func CreateSubscriptionHandler(c *gin.Context) {
     subscriptionPlan, ok := subscriptionPlans[req.ProductName]
 
     if !ok {
+        log.Println("PRODUCT NOT FOUND")
         c.JSON(http.StatusBadRequest, gin.H{"error": "Product Was Not Found"})
+        return
     }
 
     c.JSON(http.StatusOK, gin.H{"subscription_id": subscriptionPlan.SubscriptionID, "approval_url": subscriptionPlan.ApprovalURL})

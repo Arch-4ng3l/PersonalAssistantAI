@@ -7,19 +7,13 @@ function getRandomHex32() {
 function getGoogleEvent(info, title, id) {
     console.log(info)
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const startDate = new Date(info.startStr).toISOString();
-    const endDate = new Date(info.endStr).toISOString();
+    const startTime = new Date(info.startStr).toISOString();
+    const endTime = new Date(info.endStr).toISOString();
 
     let f =  JSON.stringify({
-        summary: title,
-        start : {
-            dateTime: startDate,
-            timeZone: timeZone,
-        },
-        end: {
-            dateTime: endDate,
-            timeZone: timeZone,
-        },
+        title: title,
+        startTime: startTime,
+        endTime: endTime,
         id: id
     })
     return f

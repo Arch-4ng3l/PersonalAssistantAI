@@ -38,7 +38,9 @@ var (
     googleOAuthConf *oauth2.Config
     microsoftOAuthConf *oauth2.Config
     microsoftProvider *oidc.Provider
-    calendarCache map[string]*calendar.Service
+
+    calendarCache map[string]Calendar
+
     geminiClient *genai.Client
     conversationsCache map[string]*genai.ChatSession
 )
@@ -53,7 +55,7 @@ func InitDB(config config.Config) {
         panic("failed to connect to databse")
     }
     db.AutoMigrate(&User{})
-    calendarCache = make(map[string]*calendar.Service)
+    calendarCache = make(map[string]Calendar)
     conversationsCache = make(map[string]*genai.ChatSession)
 }
 
@@ -247,7 +249,7 @@ func GoogleCallback(c *gin.Context) {
         log.Println(err.Error())
         return
     }
-    service := GetCalender(googleOAuthConf, user)
+    service := NewGoogleCalendar(googleOAuthConf, user)
     calendarCache[jwtToken] = service
 
     // Redirect to frontend with token
@@ -365,11 +367,11 @@ func Payment(c *gin.Context) {
 func FetchCalenderData(c *gin.Context) {
     token, _ := c.Cookie("token")
     service := getServiceFromToken(token)
-    evenst, _ := service.Events.List("primary").TimeMin(time.Now().Format(time.RFC3339)).Do()
-    c.JSON(http.StatusOK, gin.H{"items": evenst.Items})
+    events, _ := service.GetEvents(time.Now(), time.Now().Add(time.Hour * 24 * 7))
+    c.JSON(http.StatusOK, gin.H{"items": events})
 }
 
-func getServiceFromToken(token string) *calendar.Service {
+func getServiceFromToken(token string) Calendar {
     service, ok := calendarCache[token]
     if !ok {
         claims, err:= ValidateToken(token)
@@ -380,7 +382,7 @@ func getServiceFromToken(token string) *calendar.Service {
         if err := db.Where("email = ?", claims.Email).First(user).Error; err != nil {
             log.Fatal(err)
         }
-        service = GetCalender(googleOAuthConf, *user)
+        service = NewGoogleCalendar(googleOAuthConf, *user)
         calendarCache[token] = service
     }
     return service
@@ -390,18 +392,19 @@ func CreateEvent(c *gin.Context) {
     token, _ := c.Cookie("token")
 
     service := getServiceFromToken(token)
-    event := &calendar.Event{}
+    event := Event{}
     if err := c.ShouldBindBodyWithJSON(event); err != nil {
         log.Fatalln(err.Error())
     }
-    service.Events.Insert("primary", event).Do()
 
-    session, ok := conversationsCache[token]
+    service.CreateEvent(event)
 
-    if !ok {
-        return
-    }
-    UpdateSchedule(session, event, "Create")
+    //session, ok := conversationsCache[token]
+
+    //if !ok {
+    //    return
+    //}
+    //UpdateSchedule(session, event, "Create")
 }
 
 func RemoveEvent(c *gin.Context) {
@@ -410,21 +413,19 @@ func RemoveEvent(c *gin.Context) {
     service := getServiceFromToken(token)
 
 
-    event := &calendar.Event{}
+    event := Event{}
 
     if err := c.ShouldBindBodyWithJSON(event); err != nil {
         log.Fatal(err)
     }
+    service.RemoveEvent(event)
 
-    if err := service.Events.Delete("primary", event.Id).Do(); err != nil {
-        log.Println(err.Error())
-    }
-    session, ok := conversationsCache[token]
+    //session, ok := conversationsCache[token]
 
-    if !ok {
-        return
-    }
-    UpdateSchedule(session, event, "Remove")
+    //if !ok {
+    //    return
+    //}
+    //UpdateSchedule(session, event, "Remove")
 }
 
 func GetUserPlan(token string) string {
@@ -452,10 +453,10 @@ func AIChat(c *gin.Context) {
     session, ok := conversationsCache[token]
 
     if !ok {
-        evenst, _ := service.Events.List("primary").TimeMin(time.Now().Format(time.RFC3339)).Do()
+        events, _ := service.GetEvents(time.Now(), time.Now().Add(time.Hour * 24 * 7))
         eventStr := ""
-        for _, event := range evenst.Items {
-            eventStr += fmt.Sprint(event.Summary, " start: ",event.Start.DateTime, "end: ",  event.End.DateTime, ",")
+        for _, event := range events {
+            eventStr += fmt.Sprint(event.Title, " start: ",event.StartTime, "end: ",  event.EndTime, ",")
 
         }
         plan := GetUserPlan(token)
@@ -500,7 +501,6 @@ func (token *TokenCredential) GetToken(ctx context.Context, options policy.Token
 }
 
 func GetMicrosoftCalendar(token *oauth2.Token) {
-
 
     cred := TokenCredential{token}
 

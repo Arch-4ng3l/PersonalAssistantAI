@@ -1,14 +1,16 @@
 package main
 
-type Event interface  {
-    GetTitle() string
-    GetStartTime() string
-    GetEndTime() string
-    GetID() string
+import "time"
+
+type Event struct {
+    Title string `json:"title"`
+    StartTime string `json:"startTime"`
+    EndTime string `json:"endTime"`
+    ID string `json:"id"`
 }
 
 type Calendar interface {
-    CreateEvent(title, startTime, endTime string) error
-    RemoveEvent(title, startTime, endTime string) error
-    GetEvent(title, startTime, endTime string) error
+    CreateEvent(Event) error
+    RemoveEvent(Event) error
+    GetEvents(startTime, endTime time.Time) ([]*Event, error)
 }
