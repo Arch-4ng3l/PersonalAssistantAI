@@ -67,15 +67,15 @@ func CreateProduct(config SubscriptionConfig) (string, error) {
 func CreateNewSubscription(config SubscriptionConfig) (string, string, error){
     productID, err := CreateProduct(config)
     if err != nil {
-        log.Println("PRODUCT", err.Error())
+        log.Println(err.Error())
     }
     planID, err := CreatePlan(productID, config)
     if err != nil {
-        log.Println("PLAN", err.Error())
+        log.Println(err.Error())
     }
     subscriptionID, approvalURL, err := CreateSubscription(planID, config)
     if err != nil {
-        log.Println("SUB", err.Error())
+        log.Println(err.Error())
     }
     return subscriptionID, approvalURL, nil
 }
@@ -166,7 +166,6 @@ func PayPalReturnURL(c *gin.Context) {
     }
 
     subscription, err := paypalClient.GetSubscriptionDetails(context.Background(), subscriptionID)
-    log.Println(subscription.ShippingAmount.Value)
     if err != nil {
         c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
         return

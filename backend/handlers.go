@@ -4,16 +4,24 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
+	"github.com/coreos/go-oidc"
+	abstractions "github.com/microsoft/kiota-abstractions-go"
 
 	"github.com/Arch-4ng3l/StartupFramework/backend/config"
 	"github.com/gin-gonic/gin"
 	"github.com/google/generative-ai-go/genai"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
+	msgraphsdk "github.com/microsoftgraph/msgraph-sdk-go"
+	"github.com/microsoftgraph/msgraph-sdk-go/models/odataerrors"
 	"github.com/plutov/paypal/v4"
 	"github.com/stripe/stripe-go/v80"
 	"github.com/stripe/stripe-go/v80/customer"
@@ -21,12 +29,15 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
+	"golang.org/x/oauth2/microsoft"
 	"google.golang.org/api/calendar/v3"
 )
 
 var (
     db *gorm.DB
-    oauthConf *oauth2.Config
+    googleOAuthConf *oauth2.Config
+    microsoftOAuthConf *oauth2.Config
+    microsoftProvider *oidc.Provider
     calendarCache map[string]*calendar.Service
     geminiClient *genai.Client
     conversationsCache map[string]*genai.ChatSession
@@ -46,9 +57,25 @@ func InitDB(config config.Config) {
     conversationsCache = make(map[string]*genai.ChatSession)
 }
 
+func InitMicrosoft(config config.Config) {
+    microsoftOAuthConf = &oauth2.Config{
+        ClientID: config.MicrosoftClientID,
+        ClientSecret: config.MicrosoftClientSecret,
+        Scopes: []string{
+            oidc.ScopeOpenID,
+            oidc.ScopeOfflineAccess,
+            "User.Read",
+            "profile",
+            "email",
+            "Calendars.Read",
+        },
+        Endpoint: microsoft.AzureADEndpoint("common"),
+    }
+}
+
 
 func InitOAuth(config config.Config) {
-    oauthConf = &oauth2.Config{
+    googleOAuthConf = &oauth2.Config{
         RedirectURL:  "http://localhost:8080/auth/google/callback",
         ClientID:     config.GoogleClientID,
         ClientSecret: config.GoogleClientSecret,
@@ -149,7 +176,7 @@ func Login(c *gin.Context) {
     if !CheckPasswordHash(json.Password, user.Password) {
         c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
         return
-    }
+}
 
     token, err := GenerateJWT(user.Email)
     if err != nil {
@@ -161,7 +188,7 @@ func Login(c *gin.Context) {
 }
 
 func GoogleLogin(c *gin.Context) {
-    url := oauthConf.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
+    url := googleOAuthConf.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
     c.Redirect(http.StatusTemporaryRedirect, url)
 }
 
@@ -173,7 +200,7 @@ func GoogleCallback(c *gin.Context) {
         return
     }
 
-    token, err := oauthConf.Exchange(context.Background(), code)
+    token, err := googleOAuthConf.Exchange(context.Background(), code)
     if err != nil {
         log.Printf("Failed to Exchange %s \n", err.Error())
         c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to exchange token"})
@@ -193,6 +220,7 @@ func GoogleCallback(c *gin.Context) {
         Email string `json:"email"`
         ID    string `json:"id"`
     }
+
     if err := json.NewDecoder(resp.Body).Decode(&userInfo); err != nil {
         c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse user info"})
         return
@@ -200,9 +228,10 @@ func GoogleCallback(c *gin.Context) {
 
     // Check if user exists
     var user User
-    if err := db.Where("google_id = ?", userInfo.ID).First(&user).Error; err != nil {
+    if err := db.Where("provider_id = ?", userInfo.ID).First(&user).Error; err != nil {
         // If not, create
-        user = User{Email: userInfo.Email, GoogleID: userInfo.ID}
+        user = User{Email: userInfo.Email, ProviderID: userInfo.ID, Provider: Google}
+
         tokenJSON, _ := json.Marshal(token)
         user.CalenderToken = tokenJSON
         if err := db.Create(&user).Error; err != nil {
@@ -218,13 +247,75 @@ func GoogleCallback(c *gin.Context) {
         log.Println(err.Error())
         return
     }
-    service := GetCalender(oauthConf, user)
+    service := GetCalender(googleOAuthConf, user)
     calendarCache[jwtToken] = service
 
     // Redirect to frontend with token
     c.SetCookie("token", jwtToken, int(time.Now().Add(time.Hour * 24 * 7).Unix()), "/", "", true, false)
 
     c.Redirect(http.StatusTemporaryRedirect, "http://localhost:8080/chat")
+}
+
+func MicrosoftLogin(c *gin.Context) {
+    url := microsoftOAuthConf.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
+    c.Redirect(http.StatusTemporaryRedirect, url)
+}
+
+func MicrosoftCallback(c *gin.Context) {
+    log.Println("CALLBACK")
+    code := c.Query("code")    
+
+    token, err := microsoftOAuthConf.Exchange(context.Background(), code)
+    if err != nil {
+        log.Println("Error1 : ", err.Error())
+        return
+    }
+
+
+    user := &User{}
+
+    client, err := msgraphsdk.NewGraphServiceClientWithCredentials(&TokenCredential{token: token}, []string{
+        "email",
+        "Calenders.Read",
+    })
+
+    if err != nil {
+        log.Println("Error2: ", err.Error())
+        return
+    }
+    userResp, err := client.Me().Get(context.Background(), nil)
+
+    if err != nil {
+        log.Println(err.Error())
+        return 
+    }
+
+    user.ProviderID = *userResp.GetId()
+    user.Email = *userResp.GetMail()
+    user.Provider = Microsoft
+
+    if err := db.Where("provider_id = ?", user.ProviderID).First(&user).Error; err != nil {
+        tokenJSON, _ := json.Marshal(token)
+        user.CalenderToken = tokenJSON
+        if err := db.Create(&user).Error; err != nil {
+            log.Println(err.Error())
+            return
+        }
+
+        c.Redirect(http.StatusTemporaryRedirect, "http://localhost:8080/payment")
+    }
+
+    jwtToken, err := GenerateJWT(user.Email)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating token"})
+        log.Println(err.Error())
+        return
+    }
+
+    c.SetCookie("token", jwtToken, int(time.Now().Add(time.Hour * 24 * 7).Unix()), "/", "", true, false)
+
+    c.Redirect(http.StatusTemporaryRedirect, "http://localhost:8080/chat")
+
 }
 
 func Payment(c *gin.Context) {
@@ -289,7 +380,7 @@ func getServiceFromToken(token string) *calendar.Service {
         if err := db.Where("email = ?", claims.Email).First(user).Error; err != nil {
             log.Fatal(err)
         }
-        service = GetCalender(oauthConf, *user)
+        service = GetCalender(googleOAuthConf, *user)
         calendarCache[token] = service
     }
     return service
@@ -391,6 +482,79 @@ func AIChat(c *gin.Context) {
     c.JSON(http.StatusOK, gin.H{"reply": response})
 }
 
+
+type TokenCredential struct {
+    token *oauth2.Token
+}
+
+
+func (token *TokenCredential) GetToken(ctx context.Context, options policy.TokenRequestOptions) (azcore.AccessToken, error) {
+    if token.token.Valid() {
+        return azcore.AccessToken{
+            Token: token.token.AccessToken,
+            ExpiresOn: time.Now().Add(time.Duration(token.token.ExpiresIn)),
+        }, nil
+    }
+
+    return azcore.AccessToken{}, fmt.Errorf("token not valid")
+}
+
+func GetMicrosoftCalendar(token *oauth2.Token) {
+
+
+    cred := TokenCredential{token}
+
+    client, err := msgraphsdk.NewGraphServiceClientWithCredentials(&cred, []string {
+        "User.Read",
+        "Calendars.ReadWrite",
+    })
+    if err != nil {
+        log.Println(err.Error())
+        return 
+    }
+
+    user, err := client.Me().Get(context.Background(), nil)
+    if err != nil {
+        log.Println(err.Error())
+        return
+    }
+    log.Println("USER: ", user)
+
+    headers := abstractions.NewRequestHeaders()
+    headers.Add("Prefer", "outlook.timezone=\"Pacific Standard Time\"")
+
+
+    req, err:= client.Me().Calendar().ToGetRequestInformation(context.Background(), nil)
+    
+    httpClient := http.Client{}
+    a, err := client.RequestAdapter.ConvertToNativeRequest(context.Background(), req)
+    reqHTTP := a.(*http.Request)
+    resp, err := httpClient.Do(reqHTTP)
+    log.Println(resp)
+    s, _ := io.ReadAll(resp.Body)
+    log.Println(string(s))
+
+    
+    if err != nil {
+        switch err.(type) {
+        case *odataerrors.ODataError:
+            typed := err.(*odataerrors.ODataError)
+            fmt.Println("error: ", typed.Error())
+            if terr := typed.GetErrorEscaped(); terr != nil  {
+                fmt.Println(*terr.GetCode())
+                fmt.Println(*terr.GetMessage())
+            }
+        default:
+            fmt.Printf("%T %s", err, err.Error())
+        }
+        return
+    }
+
+
+    
+    
+}
+
 func HashPassword(password string) (string, error) {
     bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
     return string(bytes), err
@@ -400,6 +564,3 @@ func CheckPasswordHash(password, hash string) bool {
     err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
     return err == nil
 }
-
-
-

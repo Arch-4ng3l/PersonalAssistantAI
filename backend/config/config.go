@@ -17,6 +17,10 @@ type Config struct {
     GoogleClientID string
     GoogleClientSecret string
 
+    MicrosoftClientID string
+    MicrosoftClientSecret string
+    MicrosoftTenantID string
+
     StripeSecretKey string
     StripePublishableKey string
 
@@ -44,6 +48,9 @@ func LoadConfig() Config {
         JWTSecret:      os.Getenv("JWT_SECRET"),
         GoogleClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
         GoogleClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
+        MicrosoftClientID:     os.Getenv("MICROSOFT_CLIENT_ID"),
+        MicrosoftClientSecret: os.Getenv("MICROSOFT_CLIENT_SECRET"),
+        MicrosoftTenantID: os.Getenv("MICROSOFT_TENANT_ID"),
         StripeSecretKey:    os.Getenv("STRIPE_SECRET_KEY"),
         StripePublishableKey: os.Getenv("STRIPE_PUBLISHABLE_KEY"),
         PayPalClientID:       os.Getenv("PAYPAL_CLIENT_ID"),

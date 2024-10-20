@@ -13,6 +13,7 @@ func main() {
     InitDB(cfg)
     InitOAuth(cfg)
     InitPayPal(cfg)
+    InitMicrosoft(cfg)
     geminiClient = GetGeminiClient(cfg)
 
     r := gin.Default()
@@ -36,6 +37,9 @@ func main() {
     // OAuth routes
     r.GET("/auth/google/login", GoogleLogin)
     r.GET("/auth/google/callback", GoogleCallback)
+
+    r.GET("/auth/microsoft/login", MicrosoftLogin)
+    r.GET("/auth/microsoft/callback", MicrosoftCallback)
 
     // Serve frontend pages
     r.GET("/", func(c *gin.Context) {
