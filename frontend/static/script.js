@@ -191,10 +191,12 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             console.log(data);
             for(let i = 0; i < data["items"].length; i++) {
+                console.log(data["items"]);
+                
                 calendar.addEvent({
-                    title: data["items"][i].summary,
-                    start: data["items"][i].start.dateTime,
-                    end: data["items"][i].end.dateTime,
+                    title: data["items"][i].title,
+                    start: data["items"][i].startTime,
+                    end: data["items"][i].endTime,
                     allDay: false,
                     id: data["items"][i].id
 

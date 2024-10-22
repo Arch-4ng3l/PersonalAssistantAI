@@ -11,7 +11,7 @@ func main() {
     cfg := config.LoadConfig()
 
     InitDB(cfg)
-    InitOAuth(cfg)
+    InitGoogle(cfg)
     InitPayPal(cfg)
     InitMicrosoft(cfg)
     geminiClient = GetGeminiClient(cfg)
