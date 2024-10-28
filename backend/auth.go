@@ -7,7 +7,7 @@ import (
 )
 
 
-var jwtKey = []byte("123")
+var jwtKey []byte
 
 type Claims struct {
     Email string `json:"email"`

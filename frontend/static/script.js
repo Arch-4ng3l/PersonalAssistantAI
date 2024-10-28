@@ -1,3 +1,4 @@
+
 function getRandomHex32() {
   const array = new Uint8Array(16); // 16 bytes = 128 bits
   window.crypto.getRandomValues(array);

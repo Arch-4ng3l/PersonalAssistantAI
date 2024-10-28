@@ -30,6 +30,7 @@ type Config struct {
     PayPalMode string
     OpenAISecret string
     GeminiAISecret string
+
 }
 
 

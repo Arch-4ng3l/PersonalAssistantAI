@@ -67,15 +67,18 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     <!-- Stripe JS -->
     <script src="https://js.stripe.com/v3/"></script>
-    <!-- PayPal SDK -->
-    <script src="https://www.paypal.com/sdk/js?client-id={{.PayPalClientID}}&currency=EUR"></script>
     <!-- Custom JavaScript -->
+
     <script>
-        const plan = sessionStorage.getItem("plan");
-        const price = sessionStorage.getItem("price");
+        let plan = sessionStorage.getItem("plan");
+        let price = sessionStorage.getItem("price");
+        if (price === null) {
+            price = "20";
+            plan = "Premium";
+        }
         sessionStorage.clear();
         document.getElementById("price").innerText = price + "€ /Month"
-        document.getElementById("plan").innerText = plan + document.getElementById("plan").innerText;
+        document.getElementById("plan").innerText = plan + " " + document.getElementById("plan").innerText;
 
         // Stripe payment handler
         document.getElementById('paymentForm').addEventListener('submit', async (e) => {

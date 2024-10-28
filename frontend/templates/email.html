@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Client</title>
+    <style>
+/* styles.css */
+
+/* Reset some default styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Header Styling */
+header {
+    background-color: #4a90e2;
+    padding: 20px;
+    text-align: center;
+    color: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Main Content Styling */
+main {
+    flex: 1;
+    padding: 20px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* Status Messages */
+.status {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 1.2em;
+}
+
+.status.error {
+    color: red;
+}
+
+/* Email List Styling */
+.email-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.email-list-element {
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.email-list-element:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+}
+
+.email-subject {
+    font-size: 1.1em;
+    margin-bottom: 10px;
+    color: #4a90e2;
+}
+
+.email-body {
+    font-size: 0.95em;
+    color: #555;
+    line-height: 1.5;
+}
+
+/* Footer Styling */
+footer {
+    background-color: #f0f2f5;
+    text-align: center;
+    padding: 10px;
+    font-size: 0.9em;
+    color: #777;
+}
+
+
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Email Client</h1>
+    </header>
+
+    <main>
+        <div id="status" class="status">Loading emails...</div>
+        <div id="email-list" class="email-list"></div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Email Client</p>
+    </footer>
+
+    <script src="/static/email.js" defer></script>
+</body>
+</html>
