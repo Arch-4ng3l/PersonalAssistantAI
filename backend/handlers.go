@@ -13,6 +13,7 @@ import (
 	"strconv"
 
 	"context"
+
 	"github.com/Arch-4ng3l/StartupFramework/backend/config"
 	"github.com/gin-gonic/gin"
 	"github.com/google/generative-ai-go/genai"
@@ -93,7 +94,7 @@ func HandleAuthentication(c *gin.Context) error {
 func Register(c *gin.Context) error {
 	var json struct {
 		Email    string `json:"email" binding:"required,email"`
-		Password string `json:"password" binding:"required,min=6`
+		Password string `json:"password" binding:"required,min=6"`
 	}
 
 	if err := c.ShouldBindJSON(&json); err != nil {
