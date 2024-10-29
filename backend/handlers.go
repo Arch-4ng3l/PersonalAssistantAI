@@ -12,6 +12,7 @@ import (
 
 	"strconv"
 
+	"context"
 	"github.com/Arch-4ng3l/StartupFramework/backend/config"
 	"github.com/gin-gonic/gin"
 	"github.com/google/generative-ai-go/genai"
@@ -21,7 +22,6 @@ import (
 	"github.com/stripe/stripe-go/v80"
 	"github.com/stripe/stripe-go/v80/customer"
 	"github.com/stripe/stripe-go/v80/subscription"
-	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 )
 
