@@ -259,7 +259,7 @@ func RemoveEvent(c *gin.Context) {
 
 	event := Event{}
 
-	if err := c.ShouldBindBodyWithJSON(event); err != nil {
+	if err := c.ShouldBindBodyWithJSON(&event); err != nil {
 		log.Fatal(err)
 	}
 	service.RemoveEvent(event)

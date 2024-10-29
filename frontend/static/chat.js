@@ -75,19 +75,35 @@ document.addEventListener("DOMContentLoaded", () => {
     function createMessageContent(content) {
         if (typeof content === 'string') {
             const messageContent = document.createElement("div");
-            messageContent.classList.add("message-content");
-            messageContent.textContent = content;
+            messageContent.classList.add(
+                "max-w-[80%]", 
+                "rounded-2xl", 
+                "p-4", 
+                "bg-background-dark",
+                "shadow-md"
+            );
+            
+            const textSpan = document.createElement("span");
+            textSpan.textContent = content;
+            messageContent.appendChild(textSpan);
+            
             // Add timestamp
             const timestamp = document.createElement("div");
-            timestamp.style.fontSize = "10px";
-            timestamp.style.color = "#999";
-            timestamp.style.textAlign = "right";
+            timestamp.classList.add(
+                "text-xs", 
+                "text-gray-500", 
+                "mt-1", 
+                "text-right"
+            );
             const now = new Date();
-            timestamp.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            timestamp.textContent = now.toLocaleTimeString([], { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
             messageContent.appendChild(timestamp);
+            
             return messageContent;
         } else {
-            // If content is an element (e.g., typing indicator)
             return content;
         }
     }
@@ -151,6 +167,73 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    // Add these functions at the top of your event listeners
+    function showConfirmationModal(details, onConfirm) {
+        const modal = document.getElementById('confirmation-modal');
+        const detailsContainer = document.getElementById('confirmation-details');
+        const confirmButton = document.getElementById('confirm-action');
+        const cancelButton = document.getElementById('cancel-action');
+        const closeButton = document.getElementById('close-confirmation-button');
+
+        // Format the dates
+        const startDate = new Date(details.startTime).toLocaleString();
+        const endDate = new Date(details.endTime).toLocaleString();
+
+        // Populate details
+        detailsContainer.innerHTML = `
+            <div class="confirmation-item">
+                <strong>Title:</strong> 
+                <span>${details.title}</span>
+            </div>
+            <div class="confirmation-item">
+                <strong>Start:</strong> 
+                <span>${startDate}</span>
+            </div>
+            <div class="confirmation-item">
+                <strong>End:</strong> 
+                <span>${endDate}</span>
+            </div>
+        `;
+
+        // Show modal
+        modal.style.display = 'block';
+
+        // Handle confirmation
+        const handleConfirm = () => {
+            onConfirm();
+            modal.style.display = 'none';
+            cleanup();
+        };
+
+        // Handle cancel
+        const handleCancel = () => {
+            modal.style.display = 'none';
+            cleanup();
+        };
+
+        // Handle click outside
+        const handleOutsideClick = (event) => {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+                cleanup();
+            }
+        };
+
+        // Cleanup function
+        const cleanup = () => {
+            confirmButton.removeEventListener('click', handleConfirm);
+            cancelButton.removeEventListener('click', handleCancel);
+            closeButton.removeEventListener('click', handleCancel);
+            window.removeEventListener('click', handleOutsideClick);
+        };
+
+        // Add event listeners
+        confirmButton.addEventListener('click', handleConfirm);
+        cancelButton.addEventListener('click', handleCancel);
+        closeButton.addEventListener('click', handleCancel);
+        window.addEventListener('click', handleOutsideClick);
+    }
+
     // Function to append AI message with typing effect
     async function appendAIMessage(message) {
         // Parse the message JSON if it's a JSON string
@@ -162,7 +245,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (jsonMessage.action === "add_event") {
                 const details = jsonMessage.details;
-                if (confirm(`Would you like to add this event to your calendar?\n\nTitle: ${details.title}\nStart: ${new Date(details.startTime).toLocaleString()}\nEnd: ${new Date(details.endTime).toLocaleString()}`)) {
+                
+                showConfirmationModal(details, () => {
                     // Create calendar event
                     const eventInfo = {
                         startStr: details.startTime,
@@ -184,7 +268,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         allDay: false,
                         id: id
                     });
-                }
+                });
             }
 
         } catch (e) {

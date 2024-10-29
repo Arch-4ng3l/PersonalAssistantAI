@@ -20,11 +20,33 @@
     --on-surface: #edebe8;       /* Text color on background */
     --on-error: #000000;
 
-    --fc-page-bg-color: #555555;
-    --fc-border-color: #555555;
+    --fc-page-bg-color: #1f2937;
+    --fc-border-color: rgba(140, 130, 115, 0.2);
+    --fc-neutral-bg-color: #111827;
+    --fc-list-event-hover-bg-color: #374151;
+    --fc-theme-standard-dark: #1f2937;
+    
+    /* Button colors */
+    --fc-button-bg-color: #3b82f6;
+    --fc-button-border-color: #3b82f6;
+    --fc-button-hover-bg-color: #2563eb;
+    --fc-button-hover-border-color: #2563eb;
+    --fc-button-active-bg-color: #1d4ed8;
+    --fc-button-active-border-color: #1d4ed8;
+    --fc-border-color: rgba(140, 130, 115, 0.2) !important;
+    
+    /* Text colors */
+    --fc-event-text-color: #e5e7eb;
+    --fc-event-border-color: transparent;
+    --fc-event-bg-color: #3b82f6;
+    --fc-event-selected-overlay-color: rgba(0, 0, 0, 0.25);
+    
+    /* Today colors */
+    --fc-today-bg-color: rgba(59, 130, 246, 0.1);
+    --fc-now-indicator-color: #ef4444;
 
-    --calendar-width: 70%;
-    --chat-width: 28%;
+    --calendar-width: 75%;
+    --chat-width: 30%;
     --spacing: 20px;
     --container-height: calc(100vh - 40px);
 }
@@ -51,9 +73,9 @@ button:hover {
 }
 /* Calendar Container */
 #calendar {
-    width: calc(var(--calendar-width) - var(--spacing) * 2);
+    width: calc(100% - var(--spacing) * 2);
     height: var(--container-height);
-    min-height: 600px; /* Minimum height to prevent squishing */
+    /*min-height: 600px; /* Minimum height to prevent squishing */
     transition: all 0.3s ease;
     background-color: var(--surface-color);
     padding: var(--spacing);
@@ -634,15 +656,15 @@ footer {
 /* Update responsive design */
 @media screen and (max-width: 1400px) {
     :root {
-        --calendar-width: 65%;
-        --chat-width: 33%;
+        --calendar-width: 70%;
+        --chat-width: 28%;
     }
 }
 
 @media screen and (max-width: 1200px) {
     :root {
-        --calendar-width: 60%;
-        --chat-width: 38%;
+        --calendar-width: 65%;
+        --chat-width: 33%;
     }
 }
 
@@ -653,7 +675,7 @@ footer {
         --spacing: 10px;
     }
 
-    #calendar {
+    #calendar, #calendar.chat-open {
         width: calc(100% - var(--spacing) * 2);
         height: auto;
         min-height: 400px;
@@ -704,7 +726,7 @@ footer {
 /* Settings Button */
 .open-settings-button {
     position: fixed;
-    bottom: 90px; /* Position above chat button */
+    top: 20px;
     right: 20px;
     background-color: var(--surface-color);
     color: var(--on-surface);
@@ -801,4 +823,196 @@ footer {
     font-size: 24px;
     cursor: pointer;
     padding: 0;
+}
+
+/* Calendar Scrollbar Styling */
+#calendar::-webkit-scrollbar {
+    width: 6px;
+}
+
+#calendar::-webkit-scrollbar-thumb {
+    background-color: var(--primary-variant);
+    border-radius: 3px;
+}
+
+#calendar::-webkit-scrollbar-track {
+    background-color: var(--background-color);
+}
+
+/* Firefox Scrollbar Styles for Calendar */
+#calendar {
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary-variant) var(--background-color);
+}
+
+/* For Edge and other browsers */
+#calendar {
+    -ms-overflow-style: none;
+    scrollbar-width: thin;
+}
+
+/* Optional: Hover effects for the calendar scrollbar */
+#calendar::-webkit-scrollbar-thumb:hover {
+    background-color: var(--secondary-color);
+}
+
+/* Update existing FullCalendar scrollbar styles */
+.fc-scroller::-webkit-scrollbar {
+    width: 6px;
+}
+
+.fc-scroller::-webkit-scrollbar-thumb {
+    background-color: var(--primary-variant);
+    border-radius: 3px;
+}
+
+.fc-scroller::-webkit-scrollbar-track {
+    background-color: var(--background-color);
+}
+
+/* Firefox Scrollbar Styles for FullCalendar */
+.fc-scroller {
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary-variant) var(--background-color);
+}
+
+/* Optional: Hover effects for FullCalendar scrollbar */
+.fc-scroller::-webkit-scrollbar-thumb:hover {
+    background-color: var(--secondary-color);
+}
+
+/* Confirmation Modal Styles */
+.confirmation-item {
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: var(--background-color);
+    border-radius: var(--border-radius);
+}
+
+.confirmation-item strong {
+    display: inline-block;
+    width: 80px;
+    color: var(--primary-color);
+}
+
+.confirmation-item span {
+    color: var(--on-background);
+}
+
+#confirmation-details {
+    margin-bottom: 20px;
+}
+
+/* Ensure buttons have some space between them */
+.subscription-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+.subscription-actions button {
+    min-width: 100px;
+}
+
+/* Calendar Custom Styles */
+.fc {
+    background-color: #181a1b;
+    color: #e8e6e3;
+}
+
+.fc .fc-toolbar {
+    background-color: #181a1b;
+}
+
+.fc .fc-toolbar-title {
+    color: #e8e6e3;
+}
+
+.fc .fc-timegrid-col.fc-day-today {
+    background-color: rgba(59, 130, 246, 0.1) !important;
+}
+
+.fc .fc-timegrid-slot {
+    border-top: 1px solid rgba(140, 130, 115, 0.2) !important;
+}
+
+.fc .fc-timegrid-col-frame {
+    border-left: 1px solid rgba(140, 130, 115, 0.2) !important;
+}
+
+.fc .fc-timegrid-now-indicator-line {
+    border-color: var(--fc-now-indicator-color);
+}
+
+.fc .fc-timegrid-axis {
+    border-color: rgba(140, 130, 115, 0.2);
+}
+
+.fc .fc-timegrid-slot-label {
+    color: #c8c3bc;
+    background-color: #181a1b;
+}
+
+.fc-event {
+    background-color: #3b82f6 !important;
+    border-color: transparent !important;
+    color: #e8e6e3 !important;
+}
+
+.fc th {
+    background-color: #181a1b;
+    color: #e8e6e3;
+    border-color: rgba(140, 130, 115, 0.2) !important;
+}
+
+.fc-button-primary {
+    background-color: #3b82f6 !important;
+    border-color: #3b82f6 !important;
+    color: #e8e6e3 !important;
+}
+
+.fc-button-primary:hover {
+    background-color: #2563eb !important;
+    border-color: #2563eb !important;
+}
+
+.fc-button-primary:disabled {
+    background-color: #4b5563 !important;
+    border-color: #4b5563 !important;
+}
+
+.fc-highlight {
+    background-color: rgba(59, 130, 246, 0.15) !important;
+}
+
+.fc-scroller::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+.fc-scroller::-webkit-scrollbar-track {
+    background: #181a1b;
+}
+
+.fc-scroller::-webkit-scrollbar-thumb {
+    background: #454a4d;
+    border-radius: 5px;
+}
+
+.fc-scroller::-webkit-scrollbar-thumb:hover {
+    background: #575e62;
+}
+
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+    #calendar.chat-open {
+        width: 100%;
+        margin-right: 0;
+    }
+    
+    #chat-modal .absolute {
+        width: 100%;
+    }
 }
