@@ -1,9 +1,12 @@
 package main
 
 import (
+	"encoding/gob"
 	"net/http"
 
 	"github.com/Arch-4ng3l/StartupFramework/backend/config"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 )
 
@@ -18,42 +21,45 @@ func main() {
 	geminiClient = GetGeminiClient(cfg)
 
 	r := gin.Default()
+	store := cookie.NewStore([]byte(cfg.JWTSecret))
+	gob.Register(StateToken{})
+	r.Use(sessions.Sessions("session", store))
 
 	r.Static("/static", "../frontend/static")
 	r.LoadHTMLGlob("../frontend/templates/*")
 
 	api := r.Group("/api")
 	{
-		api.POST("/register", Register)
-		api.POST("/login", Login)
-		api.GET("/payment", Payment)
-		api.POST("/paypal", CreateSubscriptionHandler)
-		api.POST("/calendar-create", CreateEvent)
-		api.POST("/calendar-remove", RemoveEvent)
-		api.GET("/calendar-load", FetchCalenderData)
-		api.POST("/ai-chat", AIChat)
-		api.GET("/paypal-check", PayPalReturnURL)
-		api.GET("/email", GetEmail)
-		api.POST("/paypal-webhook", webhookHandler)
-		api.POST("/paypal-cancel", CancelSubscriptionHandler)
-		api.POST("/paypal-activate", ActivateSubscriptionHandler)
-		api.POST("/paypal-suspend", SuspendSubscriptionHandler)
-		api.GET("/subscription-status", GetSubscriptionDetails)
+		api.POST("/register", HandleError(Register))
+		api.POST("/login", HandleError(Login))
+		api.GET("/payment", HandleError(Payment))
+		api.POST("/paypal", HandleError(CreateSubscriptionHandler))
+		api.POST("/calendar-create", HandleError(CreateEvent))
+		api.POST("/calendar-remove", HandleError(RemoveEvent))
+		api.GET("/calendar-load", HandleError(FetchCalenderData))
+		api.POST("/ai-chat", HandleError(AIChat))
+		api.GET("/paypal-check", HandleError(PayPalReturnURL))
+		api.GET("/email", HandleError(GetEmail))
+		api.POST("/paypal-webhook", HandleError(webhookHandler))
+		api.POST("/paypal-cancel", HandleError(CancelSubscriptionHandler))
+		api.POST("/paypal-activate", HandleError(ActivateSubscriptionHandler))
+		api.POST("/paypal-suspend", HandleError(SuspendSubscriptionHandler))
+		api.GET("/subscription-status", HandleError(GetSubscriptionDetails))
 	}
 
 	// OAuth routes
-	r.GET("/auth/google/login", GoogleLogin)
-	r.GET("/auth/google/callback", GoogleCallback)
+	r.GET("/auth/google/login", HandleError(GoogleLogin))
+	r.GET("/auth/google/callback", HandleError(GoogleCallback))
 
-	r.GET("/auth/microsoft/login", MicrosoftLogin)
-	r.GET("/auth/microsoft/callback", MicrosoftCallback)
+	r.GET("/auth/microsoft/login", HandleError(MicrosoftLogin))
+	r.GET("/auth/microsoft/callback", HandleError(MicrosoftCallback))
 
 	// Serve frontend pages
 	r.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.html", nil)
 	})
 
-	r.GET("/chat", HandleAuthentication)
+	r.GET("/chat", HandleError(HandleAuthentication))
 
 	r.GET("/login", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "login.html", nil)

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -36,17 +37,17 @@ type SubscriptionConfig struct {
 	Interval  paypal.IntervalUnit `json:"interval"`
 }
 
-func InitPayPal(config config.Config) {
+func InitPayPal(config config.Config) error {
 	client, err := paypal.NewClient(config.PayPalClientID, config.PayPalSecret, paypal.APIBaseSandBox)
 	if err != nil {
-		log.Fatalf("Paypal Init Error: %s\n", err.Error())
+		return err
 	}
-	//client.SetLog(os.Stdout)
 
 	paypalClient = client
 	subscriptionPlans = make(map[string]*SubscriptionPlan)
 	subscriptionIDs = make(map[string]string)
 	readPayPalJson()
+	return nil
 }
 
 func CreateProduct(config SubscriptionConfig) (string, error) {
@@ -149,7 +150,7 @@ func CreateSubscription(planID string, config SubscriptionConfig) (string, strin
 	return createdSubscription.ID, approvalURL, nil
 }
 
-func PayPalReturnURL(c *gin.Context) {
+func PayPalReturnURL(c *gin.Context) error {
 	subscriptionID := c.Query("subscription_id")
 	token, err := c.Cookie("token")
 	if err != nil {
@@ -158,21 +159,16 @@ func PayPalReturnURL(c *gin.Context) {
 	claims, err := ValidateToken(token)
 
 	if err != nil {
-		log.Println(err.Error())
-		return
+		return err
 	}
 
 	if subscriptionID == "" {
-		log.Println("NO SUB ID")
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Subscription ID was not found"})
-		return
+		return fmt.Errorf("Subscription ID was not found")
 	}
 
 	subscription, err := paypalClient.GetSubscriptionDetails(context.Background(), subscriptionID)
 	if err != nil {
-		log.Println(err.Error())
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+		return err
 	}
 
 	if subscription.SubscriptionStatus == paypal.SubscriptionStatusActive {
@@ -181,25 +177,24 @@ func PayPalReturnURL(c *gin.Context) {
 		err = UpdateSubscriptionStatus(claims.Email, string(subscription.SubscriptionStatus), plan)
 
 		if err != nil {
-			log.Println(err.Error())
-			return
+			return err
 		}
 		err = UpdateSubscriptionID(claims.Email, subscriptionID)
 		if err != nil {
-			log.Println(err.Error())
-			return
+			return err
 		}
 		err = UpdateSubscriptionProvider(claims.Email, Paypal)
 		if err != nil {
-			log.Println(err.Error())
-			return
+			return err
 		}
 
 		c.Redirect(http.StatusPermanentRedirect, "/chat")
+
 	} else {
-		log.Println("error")
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Subscription Not Active"})
+		return fmt.Errorf("Subscription Not Active")
 	}
+
+	return nil
 
 }
 
@@ -227,20 +222,19 @@ type UserSubscriptionRequest struct {
 	ProductName string `json:"productName"`
 }
 
-func CreateSubscriptionHandler(c *gin.Context) {
+func CreateSubscriptionHandler(c *gin.Context) error {
 	req := UserSubscriptionRequest{}
 	if err := c.ShouldBindBodyWithJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "No Valid  Product Was Given"})
+		return err
 	}
 	subscriptionPlan, ok := subscriptionPlans[req.ProductName]
 
 	if !ok {
-		log.Println("PRODUCT NOT FOUND")
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Product Was Not Found"})
-		return
+		return fmt.Errorf("Product Was Not Found")
 	}
 
 	c.JSON(http.StatusOK, gin.H{"subscription_id": subscriptionPlan.SubscriptionID, "approval_url": subscriptionPlan.ApprovalURL})
+	return nil
 }
 
 func CancelSubscription(subscriptionID, reason string) error {
@@ -254,7 +248,7 @@ func ActivateSubscription(subscriptionID string) error {
 func SuspendSubscription(subscriptionID, reason string) error {
 	return paypalClient.SuspendSubscription(context.Background(), subscriptionID, reason)
 }
-func webhookHandler(c *gin.Context) {
+func webhookHandler(c *gin.Context) error {
 	var webhookEvent struct {
 		EventType string `json:"event_type"`
 		Resource  struct {
@@ -264,15 +258,13 @@ func webhookHandler(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&webhookEvent); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid webhook payload"})
-		return
+		return fmt.Errorf("Invalid webhook payload")
 	}
 
 	// Verify webhook signature
 	verifyResponse, err := paypalClient.VerifyWebhookSignature(context.Background(), c.Request, "")
 	if err != nil || verifyResponse.VerificationStatus != "SUCCESS" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid webhook signature"})
-		return
+		return err
 	}
 
 	// Handle different webhook events
@@ -289,23 +281,22 @@ func webhookHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Webhook processed successfully"})
+	return nil
 }
 
-func verifySubscriptionHandler(c *gin.Context) {
+func verifySubscriptionHandler(c *gin.Context) error {
 	var requestData struct {
 		SubscriptionID string `json:"subscription_id"`
 	}
 	err := c.ShouldBindBodyWithJSON(&requestData)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+		return err
 	}
 
 	// Get subscription details
 	subscription, err := paypalClient.GetSubscriptionDetails(context.Background(), requestData.SubscriptionID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+		return err
 	}
 
 	// Send the subscription status back to the client
@@ -314,76 +305,71 @@ func verifySubscriptionHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
+	return nil
 }
 
-func CancelSubscriptionHandler(c *gin.Context) {
+func CancelSubscriptionHandler(c *gin.Context) error {
 	token, err := c.Cookie("token")
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authentication required"})
-		return
+		return fmt.Errorf("Authentication required")
 	}
 
 	claims, err := ValidateToken(token)
 
 	var user User
 	if err := db.Where("email = ?", claims.Email).First(&user).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
-		return
+		return fmt.Errorf("User not found")
 	}
 
 	// Cancel the subscription
 	err = CancelSubscription(user.SubscriptionID, "")
 	if err != nil {
-		log.Println(err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+		return err
 	}
 
 	// Update user's subscription status in your database
 	err = UpdateSubscriptionStatus(claims.Email, string(paypal.SubscriptionStatusCancelled), subscriptionIDs[user.SubscriptionID])
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update subscription status"})
-		return
+		return err
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Subscription cancelled successfully"})
+	return nil
 }
 
-func SuspendSubscriptionHandler(c *gin.Context) {
+func SuspendSubscriptionHandler(c *gin.Context) error {
 	var requestData struct {
 		SubscriptionID string `json:"subscription_id"`
 		Reason         string `json:"reason"`
 	}
 
 	if err := c.ShouldBindJSON(&requestData); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data"})
-		return
+		return fmt.Errorf("Invalid request data")
 	}
 
 	err := SuspendSubscription(requestData.SubscriptionID, requestData.Reason)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+		return err
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Subscription suspended successfully"})
+	return nil
 }
 
-func ActivateSubscriptionHandler(c *gin.Context) {
+func ActivateSubscriptionHandler(c *gin.Context) error {
 	var requestData struct {
 		SubscriptionID string `json:"subscription_id"`
 	}
 
 	if err := c.ShouldBindJSON(&requestData); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data"})
-		return
+		return fmt.Errorf("Invalid request data")
 	}
 
 	err := ActivateSubscription(requestData.SubscriptionID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+		return err
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Subscription activated successfully"})
+	return nil
 }

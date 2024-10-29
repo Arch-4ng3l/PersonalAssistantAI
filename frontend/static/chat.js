@@ -286,9 +286,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         appendMessage("ai", messageContent);
-        const delay = 20;
+        const delay = 10;
         for (let i = 0; i < message.length; i++) {
-            await new Promise(resolve => setTimeout(resolve, 100));
+            await new Promise(resolve => setTimeout(resolve, delay));
             typingText.textContent += message[i];
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }

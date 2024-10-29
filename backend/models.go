@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/jinzhu/gorm"
 )
@@ -26,4 +27,13 @@ type User struct {
 	SubscriptionID       string
 	SubscriptionPlan     string
 	CalenderToken        json.RawMessage `gorm:"type:jsonb"`
+}
+
+type SubscriptionDetails struct {
+	Plan            string    `json:"plan"`
+	Status          string    `json:"status"`
+	NextBillingDate time.Time `json:"nextBillingDate"`
+	Amount          float64   `json:"amount"`
+	Provider        string    `json:"provider"` // "stripe" or "paypal"
+	SubscriptionID  string    `json:"subscriptionId"`
 }

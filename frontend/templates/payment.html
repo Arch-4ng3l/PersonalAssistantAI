@@ -4,71 +4,60 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Premium Subscription Payment</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome for Icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="/static/styles.css" rel="stylesheet">
-    <!-- Custom CSS -->
-    <style>
-    </style>
 </head>
-<body>
-    <div class="payment-container">
+<body class="bg-gray-50 dark:bg-gray-900">
+    <div class="max-w-2xl mx-auto p-6 space-y-8">
         <!-- Header -->
-        <div class="header">
-            <i class="fas fa-lock fa-3x text-success mb-3"></i>
-            <h1>Secure Payment</h1>
+        <div class="text-center space-y-4">
+            <i class="fas fa-lock text-4xl text-emerald-500 dark:text-emerald-400"></i>
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Secure Payment</h1>
         </div>
 
         <!-- Subscription Details -->
-        <div class="subscription-details">
-            <h2 id="plan">Tier Subscription</h2>
-            <p class="h4" id="price">20€ / Month</p>
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 text-center space-y-2">
+            <h2 id="plan" class="text-xl font-semibold text-gray-800 dark:text-gray-200">Tier Subscription</h2>
+            <p id="price" class="text-2xl font-bold text-emerald-600 dark:text-emerald-400">20€ / Month</p>
         </div>
 
         <!-- Stripe Payment Form -->
-        <div class="payment-section">
-            <h3>Pay with Credit Card</h3>
-            <form id="paymentForm">
-                <input type="text" id="cardNumber" class="form-control" placeholder="Card Number" required />
-                <div class="row">
-                    <div class="col-6">
-                        <input type="text" id="expMonth" class="form-control" placeholder="Expiry Month (MM)" required />
-                    </div>
-                    <div class="col-6">
-                        <input type="text" id="expYear" class="form-control" placeholder="Expiry Year (YY)" required />
-                    </div>
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 space-y-4">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Pay with Credit Card</h3>
+            <form id="paymentForm" class="space-y-4">
+                <input type="text" id="cardNumber" class="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="Card Number" required />
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="text" id="expMonth" class="px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="Expiry Month (MM)" required />
+                    <input type="text" id="expYear" class="px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="Expiry Year (YY)" required />
                 </div>
-                <input type="text" id="cvc" class="form-control" placeholder="CVC" required />
-                <button type="submit" class="btn btn-primary mt-3">
-                    <i class="fab fa-cc-stripe me-2"></i> Pay with Stripe
+                <input type="text" id="cvc" class="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="CVC" required />
+                <button type="submit" class="w-full py-2 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-md transition duration-200">
+                    <i class="fab fa-cc-stripe mr-2"></i> Pay with Stripe
                 </button>
             </form>
         </div>
 
         <!-- PayPal Payment Button -->
-        <div class="payment-section">
-            <h3>Or Pay with PayPal</h3>
-            <button id="payPalButton" class="btn btn-paypal">
-                <i class="fab fa-paypal me-2"></i> Pay with PayPal
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 space-y-4">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Or Pay with PayPal</h3>
+            <button id="payPalButton" class="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md transition duration-200">
+                <i class="fab fa-paypal mr-2"></i> Pay with PayPal
             </button>
         </div>
 
         <!-- Footer -->
-        <footer>
+        <footer class="text-center text-sm text-gray-600 dark:text-gray-400">
             &copy; 2024 MORITZ. All rights reserved.
         </footer>
     </div>
 
-    <!-- Bootstrap JS Bundle (Includes Popper) -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Font Awesome JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     <!-- Stripe JS -->
     <script src="https://js.stripe.com/v3/"></script>
-    <!-- Custom JavaScript -->
+    <!-- Font Awesome JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
 
+    <!-- Keep your existing JavaScript -->
     <script>
         let plan = sessionStorage.getItem("plan");
         let price = sessionStorage.getItem("price");

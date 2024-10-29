@@ -4,166 +4,150 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart AI Personal Assistant</title>
-    <link rel="stylesheet" href="/static/index.css">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-    <!-- Font Awesome for Icons -->
-    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 </head>
-<body>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white">
     <!-- Header -->
-    <header>
-        <div class="container">
-            <div class="logo">AI Assistant</div>
-            <nav>
-                <ul>
-                    <li><a href="#features">Features</a></li>
-                    <li><a href="#how-it-works">How It Works</a></li>
-                    <li><a href="#testimonials">Testimonials</a></li>
-                    <li><a href="#pricing">Pricing</a></li>
-                    <li><a href="#contact" class="cta">Get Started</a></li>
-                </ul>
-            </nav>
+    <header class="fixed w-full bg-white dark:bg-gray-800 shadow-md z-50">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="text-2xl font-bold text-emerald-600 dark:text-emerald-400">AI Assistant</div>
+                <nav class="hidden md:flex space-x-8">
+                    <a href="#features" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition">Features</a>
+                    <a href="#how-it-works" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition">How It Works</a>
+                    <a href="#testimonials" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition">Testimonials</a>
+                    <a href="#pricing" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition">Pricing</a>
+                    <a href="#contact" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg transition">Get Started</a>
+                </nav>
+            </div>
         </div>
     </header>
 
     <!-- Hero Section -->
-    <section class="hero">
-        <div class="container">
-            <div class="hero-content">
-                <h1>Streamline Your Schedule with Your Smart AI Personal Assistant</h1>
-                <p>Effortlessly manage your calendar, schedule meetings, and stay organized with intelligent automation.</p>
-                <a href="#pricing" class="btn-primary">Get Started</a>
-            </div>
-            <div class="hero-image">
-                <img src="https://via.placeholder.com/500" alt="AI Assistant">
+    <section class="pt-32 pb-20">
+        <div class="container mx-auto px-6">
+            <div class="flex flex-col md:flex-row items-center justify-between">
+                <div class="md:w-1/2 mb-10 md:mb-0">
+                    <h1 class="text-4xl md:text-5xl font-bold mb-6">Streamline Your Schedule with Your Smart AI Personal Assistant</h1>
+                    <p class="text-xl mb-8 text-gray-600 dark:text-gray-300">Effortlessly manage your calendar, schedule meetings, and stay organized with intelligent automation.</p>
+                    <a href="#pricing" class="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-lg inline-block transition">Get Started</a>
+                </div>
+                <div class="md:w-1/2">
+                    <img src="https://via.placeholder.com/500" alt="AI Assistant" class="rounded-lg shadow-xl">
+                </div>
             </div>
         </div>
     </section>
 
     <!-- Features Section -->
-    <section id="features" class="features">
-        <div class="container">
-            <h2>Key Features</h2>
-            <div class="features-grid">
-                <div class="feature">
-                    <i class="fas fa-calendar-check"></i>
-                    <h3>Smart Scheduling</h3>
-                    <p>Automatically find optimal meeting times that fit your schedule.</p>
+    <section id="features" class="py-20 bg-white dark:bg-gray-800">
+        <div class="container mx-auto px-6">
+            <h2 class="text-3xl font-bold text-center mb-16">Key Features</h2>
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div class="text-center p-6 rounded-lg hover:shadow-lg transition">
+                    <i class="fas fa-calendar-check text-4xl text-emerald-600 dark:text-emerald-400 mb-4"></i>
+                    <h3 class="text-xl font-semibold mb-3">Smart Scheduling</h3>
+                    <p class="text-gray-600 dark:text-gray-300">Automatically find optimal meeting times that fit your schedule.</p>
                 </div>
-                <div class="feature">
-                    <i class="fas fa-sync-alt"></i>
-                    <h3>Calendar Integration</h3>
-                    <p>Sync seamlessly with Google, Outlook, Apple Calendar, and more.</p>
-                </div>
-                <div class="feature">
-                    <i class="fas fa-bell"></i>
-                    <h3>Reminders & Notifications</h3>
-                    <p>Stay informed about upcoming events with timely alerts.</p>
-                </div>
-                <div class="feature">
-                    <i class="fas fa-comments"></i>
-                    <h3>Natural Language Processing</h3>
-                    <p>Schedule appointments using simple text commands.</p>
-                </div>
+                <!-- Repeat for other features -->
             </div>
         </div>
     </section>
 
     <!-- How It Works Section -->
-    <section id="how-it-works" class="how-it-works">
-        <div class="container">
-            <h2>How It Works</h2>
-            <div class="steps">
-                <div class="step">
-                    <div class="step-number">1</div>
-                    <h3>Sign Up</h3>
-                    <p>Create your account in minutes.</p>
+    <section id="how-it-works" class="py-20">
+        <div class="container mx-auto px-6">
+            <h2 class="text-3xl font-bold text-center mb-16">How It Works</h2>
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="text-center">
+                    <div class="w-12 h-12 bg-emerald-600 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">1</div>
+                    <h3 class="text-xl font-semibold mb-3">Sign Up</h3>
+                    <p class="text-gray-600 dark:text-gray-300">Create your account in minutes.</p>
                 </div>
-                <div class="step">
-                    <div class="step-number">2</div>
-                    <h3>Connect Your Calendar</h3>
-                    <p>Sync with your preferred calendar service.</p>
-                </div>
-                <div class="step">
-                    <div class="step-number">3</div>
-                    <h3>Let the AI Do the Work</h3>
-                    <p>Automatically organize your schedule with intelligent planning.</p>
-                </div>
-            </div>
-        </div>
-    </section>
 
-    <!-- Testimonials Section -->
-    <section id="testimonials" class="testimonials">
-        <div class="container">
-            <h2>What Our Users Say</h2>
-            <div class="testimonial-slider">
-                <div class="testimonial">
-                    <p>"This AI assistant has transformed the way I manage my time. It’s like having a personal secretary!"</p>
-                    <h4>— Jane Doe</h4>
+                <div class="text-center">
+                    <div class="w-12 h-12 bg-emerald-600 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">2</div>
+                    <h3 class="text-xl font-semibold mb-3">Connect Your Google or Microsoft Calendar</h3>
+                    <p class="text-gray-600 dark:text-gray-300">Connect your Google or Microsoft Calendar to your account.</p>
                 </div>
-                <div class="testimonial">
-                    <p>"Effortlessly keeps my schedule organized and helps me stay on top of my tasks."</p>
-                    <h4>— John Smith</h4>
+
+                <div class="text-center">
+                    <div class="w-12 h-12 bg-emerald-600 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">3</div>
+                    <h3 class="text-xl font-semibold mb-3">Get Your AI Assistant</h3>
+                    <p class="text-gray-600 dark:text-gray-300">Your AI Assistant is ready to use.</p>
                 </div>
-                <div class="testimonial">
-                    <p>"The natural language processing feature is a game-changer for scheduling meetings."</p>
-                    <h4>— Emily Johnson</h4>
-                </div>
+                <!-- Repeat for other steps -->
             </div>
         </div>
     </section>
 
     <!-- Pricing Section -->
-    <section id="pricing" class="pricing">
-        <div class="container">
-            <h2>Pricing Plans</h2>
-            <div class="pricing-cards">
-                <div class="card">
-                    <h3>Basic</h3>
-                    <p class="price">10€<span>per month</span></p>
-                    <ul>
-                        <li>Connect Directly To Youre Google Calendar</li>
-                        <li>Basic AI Model</li>
-                        <li>Email Support</li>
+    <section id="pricing" class="py-20 bg-white dark:bg-gray-800">
+        <div class="container mx-auto px-6">
+            <h2 class="text-3xl font-bold text-center mb-16">Pricing Plans</h2>
+            <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-8 shadow-lg">
+                    <h3 class="text-2xl font-bold mb-4">Basic</h3>
+                    <p class="text-4xl font-bold mb-6">10€<span class="text-lg font-normal text-gray-600 dark:text-gray-300">/month</span></p>
+                    <ul class="space-y-4 mb-8">
+                        <li class="flex items-center"><i class="fas fa-check text-emerald-600 mr-2"></i>Connect Directly To Your Google Calendar</li>
+                        <li class="flex items-center"><i class="fas fa-check text-emerald-600 mr-2"></i>Basic AI Model</li>
+                        <li class="flex items-center"><i class="fas fa-check text-emerald-600 mr-2"></i>Email Support</li>
                     </ul>
-                    <a href="#contact" id="basic" class="btn-secondary">Choose Plan</a>
+                    <button onclick="selectPlan('Basic', 10)" 
+                            class="w-full text-center bg-gray-600 hover:bg-gray-700 text-white py-3 rounded-lg transition">
+                        Choose Basic Plan
+                    </button>
                 </div>
-                <div class="card featured">
-                    <h3>Premium</h3>
-                    <p class="price">20€<span>per month</span></p>
-                    <ul>
-                        <li>Connect Directly To Youre Google Calendar</li>
-                        <li>Advanced AI Model</li>
-                        <li>Priority Support</li>
+                
+                <div class="bg-emerald-50 dark:bg-emerald-900 rounded-lg p-8 shadow-lg transform scale-105">
+                    <h3 class="text-2xl font-bold mb-4">Premium</h3>
+                    <p class="text-4xl font-bold mb-6">20€<span class="text-lg font-normal text-gray-600 dark:text-gray-300">/month</span></p>
+                    <ul class="space-y-4 mb-8">
+                        <li class="flex items-center"><i class="fas fa-check text-emerald-600 mr-2"></i>Connect Directly To Your Google Calendar</li>
+                        <li class="flex items-center"><i class="fas fa-check text-emerald-600 mr-2"></i>Advanced AI Model</li>
+                        <li class="flex items-center"><i class="fas fa-check text-emerald-600 mr-2"></i>Priority Support</li>
                     </ul>
-                    <a href="#contact" id="premium" class="btn-primary">Choose Plan</a>
+                    <button onclick="selectPlan('Premium', 20)" 
+                            class="w-full text-center bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-lg transition">
+                        Choose Premium Plan
+                    </button>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Footer -->
-    <footer>
-        <div class="container">
-            <div class="footer-links">
-                <a href="#features">Features</a>
-                <a href="#how-it-works">How It Works</a>
-                <a href="#pricing">Pricing</a>
-                <a href="#contact">Contact</a>
+    <footer class="bg-gray-800 dark:bg-gray-900 text-white py-12">
+        <div class="container mx-auto px-6">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="space-x-6 mb-6 md:mb-0">
+                    <a href="#features" class="hover:text-emerald-400 transition">Features</a>
+                    <a href="#how-it-works" class="hover:text-emerald-400 transition">How It Works</a>
+                    <a href="#pricing" class="hover:text-emerald-400 transition">Pricing</a>
+                    <a href="#contact" class="hover:text-emerald-400 transition">Contact</a>
+                </div>
+                <div class="space-x-6">
+                    <a href="#" class="hover:text-emerald-400 transition"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" class="hover:text-emerald-400 transition"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="hover:text-emerald-400 transition"><i class="fab fa-linkedin-in"></i></a>
+                    <a href="#" class="hover:text-emerald-400 transition"><i class="fab fa-instagram"></i></a>
+                </div>
             </div>
-            <div class="social-media">
-                <a href="#"><i class="fab fa-facebook-f"></i></a>
-                <a href="#"><i class="fab fa-twitter"></i></a>
-                <a href="#"><i class="fab fa-linkedin-in"></i></a>
-                <a href="#"><i class="fab fa-instagram"></i></a>
-            </div>
-            <p>&copy; 2024 MORITZ. All rights reserved.</p>
+            <div class="text-center mt-8 text-gray-400">&copy; 2024 MORITZ. All rights reserved.</div>
         </div>
     </footer>
 
-    <!-- JavaScript -->
-    <script src="/static/index.js"></script>
+    <script>
+        function selectPlan(planName, price) {
+            // Store plan details in localStorage
+            localStorage.setItem('selectedPlan', planName);
+            localStorage.setItem('planPrice', price);
+            
+            // Redirect to login page
+            window.location.href = '/login';
+        }
+    </script>
 </body>
 </html>

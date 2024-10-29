@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Arch-4ng3l/StartupFramework/backend/config"
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -107,31 +108,59 @@ func InitGoogle(config config.Config) {
 	}
 }
 
-func GoogleLogin(c *gin.Context) {
-	url := googleOAuthConf.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
+func GoogleLogin(c *gin.Context) error {
+	state, err := generateStateToken()
+	if err != nil {
+		return err
+	}
+
+	session := sessions.Default(c)
+	session.Set("oauth_state", StateToken{
+		Value:     state,
+		ExpiresAt: time.Now().Add(15 * time.Minute),
+	})
+	if err := session.Save(); err != nil {
+		return err
+	}
+
+	url := googleOAuthConf.AuthCodeURL(state, oauth2.AccessTypeOffline)
 	c.Redirect(http.StatusTemporaryRedirect, url)
+	return nil
 }
 
-func GoogleCallback(c *gin.Context) {
+func GoogleCallback(c *gin.Context) error {
+	session := sessions.Default(c)
+	storedState, ok := session.Get("oauth_state").(StateToken)
+	if !ok {
+		return fmt.Errorf("Invalid session state")
+	}
+
+	session.Delete("oauth_state")
+	session.Save()
+
+	if time.Now().After(storedState.ExpiresAt) {
+		return fmt.Errorf("State token expired")
+	}
+
+	receivedState := c.Query("state")
+	if receivedState != storedState.Value {
+		return fmt.Errorf("Invalid state parameter")
+	}
+
 	code := c.Query("code")
 	if code == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Code not provided"})
-		return
+		return fmt.Errorf("Code not provided")
 	}
 
 	token, err := googleOAuthConf.Exchange(context.Background(), code)
 	if err != nil {
-		log.Printf("Failed to Exchange %s \n", err.Error())
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to exchange token"})
-		return
+		return fmt.Errorf("Failed to Exchange %s \n", err.Error())
 	}
 
 	// Fetch user info
 	resp, err := http.Get("https://www.googleapis.com/oauth2/v2/userinfo?access_token=" + token.AccessToken)
 	if err != nil {
-		log.Printf("Failed to Fetch %s \n", err.Error())
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get user info"})
-		return
+		return fmt.Errorf("Failed to Fetch %s \n", err.Error())
 	}
 
 	defer resp.Body.Close()
@@ -141,37 +170,35 @@ func GoogleCallback(c *gin.Context) {
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&userInfo); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse user info"})
-		return
+		return fmt.Errorf("Failed to parse user info")
 	}
 
 	// Check if user exists
-	var user User
-	if err := db.Where("provider_id = ?", userInfo.ID).First(&user).Error; err != nil {
+	user, err := GetUser(userInfo.Email)
+	if err != nil {
 		// If not, create
-		user = User{Email: userInfo.Email, ProviderID: userInfo.ID, Provider: Google}
+		user = &User{Email: userInfo.Email, ProviderID: userInfo.ID, Provider: Google}
 
 		tokenJSON, _ := json.Marshal(token)
 		user.CalenderToken = tokenJSON
 		if err := db.Create(&user).Error; err != nil {
-			log.Println(err.Error())
+			return err
 		}
 		c.Redirect(http.StatusTemporaryRedirect, "http://localhost:8080/payment")
 	}
 
 	jwtToken, err := GenerateJWT(user.Email)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating token"})
-		log.Println(err.Error())
-		return
+		return err
 	}
-	service := NewGoogleCalendar(googleOAuthConf, user)
+	service := NewGoogleCalendar(googleOAuthConf, *user)
 	calendarCache[jwtToken] = service
 
 	// Redirect to frontend with token
 	c.SetCookie("token", jwtToken, int(time.Now().Add(time.Hour*24*7).Unix()), "/", "", true, false)
 
 	c.Redirect(http.StatusTemporaryRedirect, "http://localhost:8080/chat")
+	return nil
 }
 
 type GoogleEmailClient struct {

@@ -1,31 +1,60 @@
 <!-- frontend/templates/index.html -->
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Home</title>
-    <link rel="stylesheet" href="/static/styles.css">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to MyApp</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 </head>
-<body>
-   <div class="payment-container">
-        <h1>Welcome to MyApp</h1>
-        <div class="login-links">
-            <a href="/login">Login</a>
-            <a href="/register">Register</a>
-            <a href="/auth/google/login" class="btn">
-                <i class="fab fa-google me-2"></i>
+<body class="bg-gray-50 dark:bg-gray-900 min-h-screen flex items-center justify-center">
+    <div class="max-w-md w-full mx-auto p-6 space-y-8">
+        <!-- Header -->
+        <div class="text-center space-y-4">
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Welcome to MyApp</h1>
+        </div>
+
+        <!-- Login Links -->
+        <div class="space-y-4">
+            <!-- Traditional Login/Register -->
+            <a href="/login" 
+               class="block w-full text-center py-3 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium transition duration-200">
+                Login
+            </a>
+            
+            <a href="/register" 
+               class="block w-full text-center py-3 px-4 rounded-lg bg-gray-600 hover:bg-gray-700 text-white font-medium transition duration-200">
+                Register
+            </a>
+
+            <!-- Social Login Buttons -->
+            <div class="relative my-6">
+                <div class="absolute inset-0 flex items-center">
+                    <div class="w-full border-t border-gray-300 dark:border-gray-700"></div>
+                </div>
+                <div class="relative flex justify-center text-sm">
+                    <span class="px-2 bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400">Or continue with</span>
+                </div>
+            </div>
+
+            <a href="/auth/google/login" 
+               class="block w-full text-center py-3 px-4 rounded-lg bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white font-medium border border-gray-300 dark:border-gray-600 transition duration-200">
+                <i class="fab fa-google mr-2"></i>
                 Continue with Google
             </a>
-            <a href="/auth/microsoft/login" class="btn">
-                <i class="fab fa-microsoft me-2"></i>
+            
+            <a href="/auth/microsoft/login" 
+               class="block w-full text-center py-3 px-4 rounded-lg bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white font-medium border border-gray-300 dark:border-gray-600 transition duration-200">
+                <i class="fab fa-microsoft mr-2"></i>
                 Continue with Microsoft
             </a>
         </div>
-        <footer>
+
+        <!-- Footer -->
+        <footer class="text-center text-sm text-gray-600 dark:text-gray-400 mt-8">
             &copy; 2024 MORITZ. All rights reserved.
         </footer>
     </div>
-
 </body>
 </html>
